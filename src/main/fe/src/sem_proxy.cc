@@ -46,6 +46,8 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   rcv_coord_[1] = opt.rcvy;
   rcv_coord_[2] = opt.rcvz;
 
+  is_snapshots_ = opt.enableSnapshots;
+
   bool isModelOnNodes = opt.isModelOnNodes;
   isElastic_ = opt.isElastic;
   cout << boolalpha;
@@ -140,6 +142,28 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 }
 
+void SEMproxy::generate_snapshot(int indexTimeSample)
+{
+  FILE * inputFile;
+  inputFile = fopen("snapshot", "w" );
+  fprintf(inputFile, "%d\n", indexTimeSample);
+
+  const int order = m_mesh->getOrder();
+
+  for (int node=0; node<m_mesh->getNumberOfNodes(); node++){
+    for (int i=0; i<m_mesh->getNumberOfPointsPerElement(); i++){
+      int x;
+      int y;
+      int z;
+      int nodeIdx = m_mesh->globalNodeIndex(0, x, y, z);
+      fprintf(inputFile, "%f,", pnGlobal(nodeIdx, i2));
+    }
+  }
+
+
+  fclose(inputFile);
+}
+
 void SEMproxy::run()
 {
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
@@ -161,6 +185,9 @@ void SEMproxy::run()
     {
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
+      if (is_snapshots_){
+        generate_snapshot(indexTimeSample);
+      }
     }
 
     // Save pressure at receiver
