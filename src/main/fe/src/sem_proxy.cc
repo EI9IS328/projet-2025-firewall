@@ -47,6 +47,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   rcv_coord_[2] = opt.rcvz;
 
   is_snapshots_ = opt.enableSnapshots;
+  snap_time_interval_ = opt.intervalSnapshots;
 
   bool isModelOnNodes = opt.isModelOnNodes;
   isElastic_ = opt.isElastic;
@@ -144,24 +145,33 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 void SEMproxy::generate_snapshot(int indexTimeSample)
 {
-  FILE * inputFile;
-  inputFile = fopen("snapshot", "w" );
-  fprintf(inputFile, "%d\n", indexTimeSample);
+std::stringstream filename;
+  filename << snap_folder_ << "snapshot_" 
+           << std::setfill('0') << std::setw(6) << indexTimeSample << ".txt";
 
-  const int order = m_mesh->getOrder();
+  int numNodes = m_mesh->getNumberOfNodes();
 
-  for (int node=0; node<m_mesh->getNumberOfNodes(); node++){
-    for (int i=0; i<m_mesh->getNumberOfPointsPerElement(); i++){
-      int x;
-      int y;
-      int z;
-      int nodeIdx = m_mesh->globalNodeIndex(0, x, y, z);
-      fprintf(inputFile, "%f,", pnGlobal(nodeIdx, i2));
-    }
+  std::ofstream outfile(filename.str());
+  if (!outfile)
+  {
+    std::cerr << "Error: Could not open file " << filename.str() << std::endl;
+    return;
   }
 
+  outfile << "x y z pressure\n";
 
-  fclose(inputFile);
+  for (int n = 0; n < numNodes; ++n)
+  {
+    float x = m_mesh->nodeCoord(n, 0);
+    float y = m_mesh->nodeCoord(n, 1);
+    float z = m_mesh->nodeCoord(n, 2);
+    float p = pnGlobal(n, i1);
+    outfile << x << " " << y << " " << z << " " << p << "\n";
+  }
+
+  outfile.close();
+
+  std::cout << "Saved wavefield snapshot to: " << filename.str() << std::endl;
 }
 
 void SEMproxy::run()
@@ -185,9 +195,9 @@ void SEMproxy::run()
     {
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
-      if (is_snapshots_){
+    }
+    if (is_snapshots_ && indexTimeSample%snap_time_interval_ ==0){
         generate_snapshot(indexTimeSample);
-      }
     }
 
     // Save pressure at receiver

@@ -27,6 +27,7 @@ class SemProxyOptions
   bool isModelOnNodes = false;
   bool isElastic = false;
   bool enableSnapshots = false;
+  int intervalSnapshots = 50;
 
   void validate() const
   {
@@ -73,6 +74,7 @@ class SemProxyOptions
         "(false)",
         cxxopts::value<bool>(o.isModelOnNodes))(
         "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
-        ("snapshot", "Enbale snapshots", cxxopts::value<bool>(o.enableSnapshots));
+        ("snapshot", "Enbale snapshots", cxxopts::value<bool>(o.enableSnapshots))
+        ("save-interval", "Choose intervall beetween snaphots (default is 50 timestep)", cxxopts::value<int>(o.intervalSnapshots));
   }
 };
