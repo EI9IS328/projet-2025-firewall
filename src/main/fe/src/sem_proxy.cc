@@ -13,20 +13,22 @@
 #include <source_and_receiver_utils.h>
 
 #include <cxxopts.hpp>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <fstream>
 #include <sstream>
-#include <vector>
 #include <variant>
+#include <vector>
 
 using namespace SourceAndReceiverUtils;
 
-void SEMproxy::parse_receivers_file(const SemProxyOptions& opt){
+void SEMproxy::parse_receivers_file(const SemProxyOptions& opt)
+{
   std::ifstream ifs(opt.receivers_file);
   if (!ifs)
   {
-    throw std::runtime_error("Could not open receivers file: " + opt.receivers_file);
+    throw std::runtime_error("Could not open receivers file: " +
+                             opt.receivers_file);
   }
 
   std::vector<std::array<float, 3>> coords;
@@ -51,7 +53,8 @@ void SEMproxy::parse_receivers_file(const SemProxyOptions& opt){
 
   if (coords.empty())
   {
-    throw std::runtime_error("No receivers found in file: " + opt.receivers_file);
+    throw std::runtime_error("No receivers found in file: " +
+                             opt.receivers_file);
   }
 
   nbReceivers = static_cast<int>(coords.size());
@@ -85,18 +88,23 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   domain_size_[0] = opt.lx;
   domain_size_[1] = opt.ly;
   domain_size_[2] = opt.lz;
-  if(opt.receivers_file=="NONE"){
-    rcvCoords = allocateArray2D<arrayReal>(
-      1, 3, "rcvCoords");
-    rcvCoords(0,0) = opt.rcvx;
-    rcvCoords(0,1) = opt.rcvy;
-    rcvCoords(0,2) = opt.rcvz;
-  }else{
+  if (opt.receivers_file == "NONE")
+  {
+    rcvCoords = allocateArray2D<arrayReal>(1, 3, "rcvCoords");
+    rcvCoords(0, 0) = opt.rcvx;
+    rcvCoords(0, 1) = opt.rcvy;
+    rcvCoords(0, 2) = opt.rcvz;
+  }
+  else
+  {
     parse_receivers_file(opt);
   }
 
-  for(int i = 0; i<nbReceivers;i++){
-    std::cout << "Receiver " <<i << " x="<< rcvCoords(i,0) << " y="<< rcvCoords(i,1)<< " z="<< rcvCoords(i,2)<< std::endl;
+  for (int i = 0; i < nbReceivers; i++)
+  {
+    std::cout << "Receiver " << i << " x=" << rcvCoords(i, 0)
+              << " y=" << rcvCoords(i, 1) << " z=" << rcvCoords(i, 2)
+              << std::endl;
   }
 
   bool isModelOnNodes = opt.isModelOnNodes;
@@ -110,7 +118,8 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   const SolverFactory::modelLocationType modelLocation =
       isModelOnNodes ? SolverFactory::modelLocationType::OnNodes
                      : SolverFactory::modelLocationType::OnElements;
-  const SolverFactory::physicType physicType = SolverFactory::physicType::Acoustic;
+  const SolverFactory::physicType physicType =
+      SolverFactory::physicType::Acoustic;
 
   float lx = domain_size_[0];
   float ly = domain_size_[1];
@@ -190,7 +199,6 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Order of approximation will be " << order << std::endl;
   std::cout << "Time step is " << dt_ << "s" << std::endl;
   std::cout << "Simulated time is " << timemax_ << "s" << std::endl;
-
 }
 
 void SEMproxy::run()
@@ -368,16 +376,17 @@ void SEMproxy::init_source()
 */
   for (int i = 0; i < nbReceivers; i++)
   {
-    //rhsElementRcv[i] = receiver_index;
-    rhsElementRcv[i] = floor((rcvCoords(i,0) * ex) / lx) +
-                       floor((rcvCoords(i,1) * ey) / ly) * ex +
-                       floor((rcvCoords(i,2) * ez) / lz) * ey * ex;
+    // rhsElementRcv[i] = receiver_index;
+    rhsElementRcv[i] = floor((rcvCoords(i, 0) * ex) / lx) +
+                       floor((rcvCoords(i, 1) * ey) / ly) * ex +
+                       floor((rcvCoords(i, 2) * ez) / lz) * ey * ex;
   }
 
-//TODO: add all receivers
-  // Get coordinates of the corners of the receiver element
+  // TODO: add all receivers
+  //  Get coordinates of the corners of the receiver element
   float cornerCoordsRcv[nbReceivers][8][3];
-  for(int rcv = 0; rcv < nbReceivers;rcv++){
+  for (int rcv = 0; rcv < nbReceivers; rcv++)
+  {
     I = 0;
     for (int k : nodes_corner)
     {
@@ -394,22 +403,25 @@ void SEMproxy::init_source()
       }
     }
   }
-  //TODO: compute all receivers
-  for(int i =0; i<nbReceivers; i++){
-    std::array<float, 3> coords_tmp = {rcvCoords(i,0), rcvCoords(i,1), rcvCoords(i,2)};
+  // TODO: compute all receivers
+  for (int i = 0; i < nbReceivers; i++)
+  {
+    std::array<float, 3> coords_tmp = {rcvCoords(i, 0), rcvCoords(i, 1),
+                                       rcvCoords(i, 2)};
     switch (order)
     {
       case 1:
-        SourceAndReceiverUtils::ComputeRHSWeights<1>(cornerCoordsRcv[i], coords_tmp, //TODO: use either subview or 
-                                                    rhsWeightsRcv);
+        SourceAndReceiverUtils::ComputeRHSWeights<1>(
+            cornerCoordsRcv[i], coords_tmp,  // TODO: use either subview or
+            rhsWeightsRcv);
         break;
       case 2:
-        SourceAndReceiverUtils::ComputeRHSWeights<2>(cornerCoordsRcv[i], coords_tmp,
-                                                    rhsWeightsRcv);
+        SourceAndReceiverUtils::ComputeRHSWeights<2>(cornerCoordsRcv[i],
+                                                     coords_tmp, rhsWeightsRcv);
         break;
       case 3:
-        SourceAndReceiverUtils::ComputeRHSWeights<3>(cornerCoordsRcv[i], coords_tmp,
-                                                    rhsWeightsRcv);
+        SourceAndReceiverUtils::ComputeRHSWeights<3>(cornerCoordsRcv[i],
+                                                     coords_tmp, rhsWeightsRcv);
         break;
       default:
         throw std::runtime_error("Unsupported order: " + std::to_string(order));
