@@ -19,7 +19,7 @@ cd ../build
 cmake ..
 make
 cd ../benchmark
-mkdir -p "${FILE}"
+mkdir -p "${FOLDER}"
 
 echo "Running benchmarks..."
 for pb_size in $PROBLEM_SIZE; do
@@ -32,3 +32,6 @@ for pb_size in $PROBLEM_SIZE; do
         fi
     done
 done
+
+echo "Formatting results..."
+python3 formatter.py "${FOLDER}"

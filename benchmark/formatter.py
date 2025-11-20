@@ -18,9 +18,15 @@ patterns = r"""
 ^Number\ of\ receivers\ is\s*(?P<receivers>.*)$
 [\s\S]*?
 ^Ex=(?P<Ex>\d+)\ Ey=(?P<Ey>\d+)\ Ez=(?P<Ez>\d+)$
+[\s\S]*?
+^Elapsed\ Initial\ Time\ :\ (?P<InitialTime>[\d\.]+)\ seconds.$
+[\s\S]*?
+^Elapsed\ Compute\ Time\ :\ (?P<ComputeTime>[\d\.]+)\ seconds.$
+[\s\S]*?
+^Elapsed\ TotalExe\ Time\ :\ (?P<TotalTime>[\d\.]+)\ seconds.$
 """
 
-header = "Nodes,Elements,Timestep,Simulated Time,Snapshot Enabled,Snapshot Interval,Receivers,Ex,Ey,Ez\n"
+header = "Nodes,Elements,Timestep,Simulated Time,Snapshot Enabled,Snapshot Interval,Receivers,Ex,Ey,Ez,Initial Time,Compute Time,Total Time\n"
 parsed_data = []
 
 if len(sys.argv) != 2:
@@ -50,9 +56,25 @@ for filename in os.listdir(dir_path):
                                 extracted_data['receivers'],
                                 extracted_data['Ex'],
                                 extracted_data['Ey'],
-                                extracted_data['Ez']])
+                                extracted_data['Ez'],
+                                extracted_data['InitialTime'],
+                                extracted_data['ComputeTime'],
+                                extracted_data['TotalTime']])
                 else:
                     print("Pattern not found")
 
             except FileNotFoundError:
                 print("Error: File not found")
+
+
+try:
+    full_path = os.path.join(dir_path, "output")
+    with open(full_path, "w") as f:  
+        f.write(header)
+        for row in parsed_data:
+            f.write(",".join(row) + "\n")
+        f.close()
+        
+except Exception as _:
+        print("Failed to save output")
+        exit(1)
