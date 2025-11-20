@@ -209,6 +209,21 @@ void SEMproxy::run()
   SEMsolverDataAcoustic solverData(i1, i2, myRHSTerm, pnGlobal, rhsElement,
                                    rhsWeights);
 
+  ofstream my_file;
+  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+  std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+
+  std::stringstream ss;
+  ss << std::put_time(std::localtime(&now_c), "sismos_%Y-%m-%d_%H:%M:%S");
+
+  std::string filename = ss.str();
+  my_file.open(filename);
+  my_file <<"Time ";
+  for(int indexRcv=0; indexRcv<nbReceivers;indexRcv++){
+    my_file << ""<<rcvCoords(indexRcv,0)<<","<<rcvCoords(indexRcv,1)<<","<<rcvCoords(indexRcv,2)<<" ";
+  }
+  my_file<< "\n";
+
   for (int indexTimeSample = 0; indexTimeSample < num_sample_;
        indexTimeSample++)
   {
@@ -226,25 +241,32 @@ void SEMproxy::run()
 
     // Save pressure at receiver
     const int order = m_mesh->getOrder();
+    my_file<<"t"<<indexTimeSample<<" ";
+    cout <<"t"<<indexTimeSample<<" ";
+    for(int indexRcv=0; indexRcv<nbReceivers; indexRcv++){
 
-    float varnp1 = 0.0;
-    for (int i = 0; i < order + 1; i++)
-    {
-      for (int j = 0; j < order + 1; j++)
+      float varnp1 = 0.0;
+      for (int i = 0; i < order + 1; i++)
       {
-        for (int k = 0; k < order + 1; k++)
+        for (int j = 0; j < order + 1; j++)
         {
-          int nodeIdx = m_mesh->globalNodeIndex(rhsElementRcv[0], i, j, k);
-          int globalNodeOnElement =
-              i + j * (order + 1) + k * (order + 1) * (order + 1);
-          varnp1 +=
-              pnGlobal(nodeIdx, i2) * rhsWeightsRcv(0, globalNodeOnElement);
+          for (int k = 0; k < order + 1; k++)
+          {
+            int nodeIdx = m_mesh->globalNodeIndex(rhsElementRcv[indexRcv], i, j, k);
+            int globalNodeOnElement =
+                i + j * (order + 1) + k * (order + 1) * (order + 1);
+            varnp1 +=
+                pnGlobal(nodeIdx, i2) * rhsWeightsRcv(indexRcv, globalNodeOnElement);
+            //cout << "pn global " << pnGlobal(nodeIdx, i2) << "wheight" <<rhsWeightsRcv(indexRcv, globalNodeOnElement) <<"\n";
+          }
         }
       }
+
+      pnAtReceiver(indexRcv, indexTimeSample) = varnp1;
+
+      my_file << "" <<varnp1<<" ";
+      cout << "" <<varnp1<<" ";
     }
-
-    pnAtReceiver(0, indexTimeSample) = varnp1;
-
     swap(i1, i2);
 
     auto tmp = solverData.m_i1;
@@ -252,7 +274,11 @@ void SEMproxy::run()
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
+    my_file << "\n";
+    cout << "\n";
   }
+  //TODO: close the file
+  my_file.close();
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
                             .time_since_epoch()
@@ -279,7 +305,7 @@ void SEMproxy::init_arrays()
   myRHSTerm = allocateArray2D<arrayReal>(myNumberOfRHS, num_sample_, "RHSTerm");
   pnGlobal =
       allocateArray2D<arrayReal>(m_mesh->getNumberOfNodes(), 2, "pnGlobal");
-  pnAtReceiver = allocateArray2D<arrayReal>(1, num_sample_, "pnAtReceiver");
+  pnAtReceiver = allocateArray2D<arrayReal>(nbReceivers, num_sample_, "pnAtReceiver");
   // Receiver
   // Allocate the vectors with the number of receivers
   rhsElementRcv = allocateVector<vectorInt>(nbReceivers, "rhsElementRcv");
@@ -403,7 +429,7 @@ void SEMproxy::init_source()
       }
     }
   }
-  // TODO: compute all receivers
+  // TODO: fix computation of weight : only receiver 0 has a weight
   for (int i = 0; i < nbReceivers; i++)
   {
     std::array<float, 3> coords_tmp = {rcvCoords(i, 0), rcvCoords(i, 1),
@@ -411,8 +437,7 @@ void SEMproxy::init_source()
     switch (order)
     {
       case 1:
-        SourceAndReceiverUtils::ComputeRHSWeights<1>(
-            cornerCoordsRcv[i], coords_tmp,  // TODO: use either subview or
+        SourceAndReceiverUtils::ComputeRHSWeights<1>(cornerCoordsRcv[i], coords_tmp,
             rhsWeightsRcv);
         break;
       case 2:
