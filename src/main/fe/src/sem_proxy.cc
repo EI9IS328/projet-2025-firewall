@@ -35,10 +35,7 @@ void SEMproxy::parse_receivers_file(const SemProxyOptions& opt)
   std::string line;
   while (std::getline(ifs, line))
   {
-    // skip empty lines or comment lines
     if (line.empty()) continue;
-    // replace commas by spaces to allow both formats
-    std::cout << "Line " << line << std::endl;
     for (char& c : line)
       if (c == ',') c = ' ';
 
@@ -98,13 +95,6 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   else
   {
     parse_receivers_file(opt);
-  }
-
-  for (int i = 0; i < nbReceivers; i++)
-  {
-    std::cout << "Receiver " << i << " x=" << rcvCoords(i, 0)
-              << " y=" << rcvCoords(i, 1) << " z=" << rcvCoords(i, 2)
-              << std::endl;
   }
 
   bool isModelOnNodes = opt.isModelOnNodes;
@@ -242,7 +232,6 @@ void SEMproxy::run()
     // Save pressure at receiver
     const int order = m_mesh->getOrder();
     my_file<<"t"<<indexTimeSample<<" ";
-    cout <<"t"<<indexTimeSample<<" ";
     for(int indexRcv=0; indexRcv<nbReceivers; indexRcv++){
 
       float varnp1 = 0.0;
@@ -265,7 +254,7 @@ void SEMproxy::run()
       pnAtReceiver(indexRcv, indexTimeSample) = varnp1;
 
       my_file << "" <<varnp1<<" ";
-      cout << "" <<varnp1<<" ";
+      //cout << "" <<varnp1<<" ";
     }
     swap(i1, i2);
 
@@ -275,9 +264,8 @@ void SEMproxy::run()
 
     totalOutputTime += system_clock::now() - startOutputTime;
     my_file << "\n";
-    cout << "\n";
+    //cout << "\n";
   }
-  //TODO: close the file
   my_file.close();
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
@@ -408,7 +396,6 @@ void SEMproxy::init_source()
                        floor((rcvCoords(i, 2) * ez) / lz) * ey * ex;
   }
 
-  // TODO: add all receivers
   //  Get coordinates of the corners of the receiver element
   float cornerCoordsRcv[nbReceivers][8][3];
   for (int rcv = 0; rcv < nbReceivers; rcv++)
@@ -429,7 +416,9 @@ void SEMproxy::init_source()
       }
     }
   }
-  // TODO: fix computation of weight : only receiver 0 has a weight
+  // TODO: fix computation of weight : only receiver 0 has a weight -> compute wheights only updates th recevier 0
+  const int numNodes = m_mesh->getNumberOfPointsPerElement();
+  arrayReal tmpWeights = allocateArray2D<arrayReal>(1, numNodes, "tmpRHSWeight");
   for (int i = 0; i < nbReceivers; i++)
   {
     std::array<float, 3> coords_tmp = {rcvCoords(i, 0), rcvCoords(i, 1),
@@ -438,19 +427,21 @@ void SEMproxy::init_source()
     {
       case 1:
         SourceAndReceiverUtils::ComputeRHSWeights<1>(cornerCoordsRcv[i], coords_tmp,
-            rhsWeightsRcv);
+            tmpWeights);
         break;
       case 2:
         SourceAndReceiverUtils::ComputeRHSWeights<2>(cornerCoordsRcv[i],
-                                                     coords_tmp, rhsWeightsRcv);
+                                                     coords_tmp, tmpWeights);
         break;
       case 3:
         SourceAndReceiverUtils::ComputeRHSWeights<3>(cornerCoordsRcv[i],
-                                                     coords_tmp, rhsWeightsRcv);
+                                                     coords_tmp, tmpWeights);
         break;
       default:
         throw std::runtime_error("Unsupported order: " + std::to_string(order));
     }
+    for (int n = 0; n < numNodes; ++n)
+        rhsWeightsRcv(i, n) = tmpWeights(0, n);
   }
 }
 
