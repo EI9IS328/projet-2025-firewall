@@ -100,6 +100,10 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   is_snapshots_ = opt.enableSnapshots;
   snap_time_interval_ = opt.intervalSnapshots;
 
+  is_sismos_ = opt.enableSismos;
+  snap_folder_= opt.folderSnapshots;
+  sismos_folder_ = opt.folderSismos;
+
   bool isModelOnNodes = opt.isModelOnNodes;
   isElastic_ = opt.isElastic;
   cout << boolalpha;
@@ -203,9 +207,15 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 void SEMproxy::generate_snapshot(int indexTimeSample)
 {
 std::stringstream filename;
-  filename << snap_folder_ << "snapshot_" 
-           << std::setfill('0') << std::setw(6) << indexTimeSample << ".txt";
+std::filesystem::path dir = snap_folder_;
 
+    if (!std::filesystem::exists(dir)) {
+        if (! std::filesystem::create_directory(dir)) {
+            std::cout << "Failed to create directory.\n";
+        }
+    }
+  filename << snap_folder_ << "/snapshot_" 
+           << std::setfill('0') << std::setw(6) << indexTimeSample << ".snapshot";
   int numNodes = m_mesh->getNumberOfNodes();
 
   std::ofstream outfile(filename.str());
@@ -228,7 +238,7 @@ std::stringstream filename;
 
   outfile.close();
 
-  std::cout << "Saved wavefield snapshot to: " << filename.str() << std::endl;
+  std::cout << "Saved snapshot to: " << filename.str() << std::endl;
 }
 
 void SEMproxy::run()
@@ -239,20 +249,29 @@ void SEMproxy::run()
   SEMsolverDataAcoustic solverData(i1, i2, myRHSTerm, pnGlobal, rhsElement,
                                    rhsWeights);
 
-  ofstream my_file;
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
   std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 
-  std::stringstream ss;
-  ss << std::put_time(std::localtime(&now_c), "sismos_%Y-%m-%d_%H:%M:%S");
+  ofstream my_file;
+  if(is_sismos_){
+  std::stringstream filename;
+    std::filesystem::path dir = sismos_folder_;
 
-  std::string filename = ss.str();
-  my_file.open(filename);
-  my_file <<"Time ";
-  for(int indexRcv=0; indexRcv<nbReceivers;indexRcv++){
-    my_file << ""<<rcvCoords(indexRcv,0)<<","<<rcvCoords(indexRcv,1)<<","<<rcvCoords(indexRcv,2)<<" ";
+    if (!std::filesystem::exists(dir)) {
+        if (!std::filesystem::create_directory(dir)) {
+            std::cout << "Failed to create directory.\n";
+        }
+    }
+    filename <<sismos_folder_<< std::put_time(std::localtime(&now_c), "/sismos_%Y-%m-%d_%H:%M:%S.sismos");
+
+    my_file.open(filename.str());
+    my_file <<"Time ";
+    for(int indexRcv=0; indexRcv<nbReceivers;indexRcv++){
+      my_file << ""<<rcvCoords(indexRcv,0)<<","<<rcvCoords(indexRcv,1)<<","<<rcvCoords(indexRcv,2)<<" ";
+    }
+    my_file<< "\n";
   }
-  my_file<< "\n";
+
 
   for (int indexTimeSample = 0; indexTimeSample < num_sample_;
        indexTimeSample++)
@@ -274,7 +293,9 @@ void SEMproxy::run()
 
     // Save pressure at receiver
     const int order = m_mesh->getOrder();
-    my_file<<"t"<<indexTimeSample<<" ";
+    if(is_sismos_){
+      my_file<<"t"<<indexTimeSample<<" ";
+    }
     for(int indexRcv=0; indexRcv<nbReceivers; indexRcv++){
 
       float varnp1 = 0.0;
@@ -295,8 +316,9 @@ void SEMproxy::run()
       }
 
       pnAtReceiver(indexRcv, indexTimeSample) = varnp1;
-
-      my_file << "" <<varnp1<<" ";
+      if(is_sismos_){
+         my_file << "" <<varnp1<<" ";
+      }
       //cout << "" <<varnp1<<" ";
     }
     swap(i1, i2);
@@ -306,10 +328,14 @@ void SEMproxy::run()
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
-    my_file << "\n";
+    if(is_sismos_){
+      my_file << "\n";
+    }
     //cout << "\n";
   }
-  my_file.close();
+  if(is_sismos_){
+    my_file.close();
+  }
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
                             .time_since_epoch()
@@ -426,14 +452,8 @@ void SEMproxy::init_source()
   }
 
   // Receiver computation
-  /* TODO:remove when done
-  int receiver_index = floor((rcv_coord_[0] * ex) / lx) +
-                       floor((rcv_coord_[1] * ey) / ly) * ex +
-                       floor((rcv_coord_[2] * ez) / lz) * ey * ex;
-*/
   for (int i = 0; i < nbReceivers; i++)
   {
-    // rhsElementRcv[i] = receiver_index;
     rhsElementRcv[i] = floor((rcvCoords(i, 0) * ex) / lx) +
                        floor((rcvCoords(i, 1) * ey) / ly) * ex +
                        floor((rcvCoords(i, 2) * ez) / lz) * ey * ex;
@@ -459,7 +479,7 @@ void SEMproxy::init_source()
       }
     }
   }
-  // TODO: fix computation of weight : only receiver 0 has a weight -> compute wheights only updates th recevier 0
+
   const int numNodes = m_mesh->getNumberOfPointsPerElement();
   arrayReal tmpWeights = allocateArray2D<arrayReal>(1, numNodes, "tmpRHSWeight");
   for (int i = 0; i < nbReceivers; i++)
