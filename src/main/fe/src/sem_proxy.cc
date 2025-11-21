@@ -97,6 +97,9 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
     parse_receivers_file(opt);
   }
 
+  is_snapshots_ = opt.enableSnapshots;
+  snap_time_interval_ = opt.intervalSnapshots;
+
   bool isModelOnNodes = opt.isModelOnNodes;
   isElastic_ = opt.isElastic;
   cout << boolalpha;
@@ -191,6 +194,37 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Simulated time is " << timemax_ << "s" << std::endl;
 }
 
+void SEMproxy::generate_snapshot(int indexTimeSample)
+{
+std::stringstream filename;
+  filename << snap_folder_ << "snapshot_" 
+           << std::setfill('0') << std::setw(6) << indexTimeSample << ".txt";
+
+  int numNodes = m_mesh->getNumberOfNodes();
+
+  std::ofstream outfile(filename.str());
+  if (!outfile)
+  {
+    std::cerr << "Error: Could not open file " << filename.str() << std::endl;
+    return;
+  }
+
+  outfile << "x y z pressure\n";
+
+  for (int n = 0; n < numNodes; ++n)
+  {
+    float x = m_mesh->nodeCoord(n, 0);
+    float y = m_mesh->nodeCoord(n, 1);
+    float z = m_mesh->nodeCoord(n, 2);
+    float p = pnGlobal(n, i1);
+    outfile << x << " " << y << " " << z << " " << p << "\n";
+  }
+
+  outfile.close();
+
+  std::cout << "Saved wavefield snapshot to: " << filename.str() << std::endl;
+}
+
 void SEMproxy::run()
 {
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
@@ -227,6 +261,9 @@ void SEMproxy::run()
     {
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
+    }
+    if (is_snapshots_ && indexTimeSample%snap_time_interval_ ==0){
+        generate_snapshot(indexTimeSample);
     }
 
     // Save pressure at receiver
