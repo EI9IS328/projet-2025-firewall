@@ -254,7 +254,7 @@ void SEMproxy::run()
 
   ofstream my_file;
   if(is_sismos_){
-  std::stringstream filename;
+    std::stringstream filename;
     std::filesystem::path dir = sismos_folder_;
 
     if (!std::filesystem::exists(dir)) {
@@ -262,7 +262,7 @@ void SEMproxy::run()
             std::cout << "Failed to create directory.\n";
         }
     }
-    filename <<sismos_folder_<< std::put_time(std::localtime(&now_c), "/sismos_%Y-%m-%d_%H:%M:%S.sismos");
+    filename <<sismos_folder_<< "/sismos_res.sismos";
 
     my_file.open(filename.str());
     my_file <<"Time ";
