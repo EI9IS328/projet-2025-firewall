@@ -135,6 +135,8 @@ class SEMproxy
   SolverFactory::methodType getMethod(string methodArg);
   SolverFactory::meshType getMesh(string meshArg);
 
+  // snapshot
+  void generate_snapshot(int indexTimeSample);
 };
 
 #endif /* SEMPROXY_HPP_ */
