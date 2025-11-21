@@ -26,6 +26,7 @@ class SemProxyOptions
   // Boolean to tell if the model is charged on nodes or on element
   bool isModelOnNodes = false;
   bool isElastic = false;
+  std::string receivers_file = "NONE";  //"../src/samples/receivers.sample";
   bool enableSnapshots = false;
   int intervalSnapshots = 50;
 
@@ -36,6 +37,10 @@ class SemProxyOptions
       throw std::runtime_error("ex/ey/ez must be > 0");
     if (lx <= 0 || ly <= 0 || lz <= 0)
       throw std::runtime_error("lx/ly/lz must be > 0");
+    if (receivers_file == "")
+    {
+      throw std::runtime_error("receiver file can't be empty");
+    }
   }
 
   // Bind CLI flags to this instance (no --help here)
@@ -73,6 +78,11 @@ class SemProxyOptions
         "Boolean to tell if the model is charged on nodes (true) or on element "
         "(false)",
         cxxopts::value<bool>(o.isModelOnNodes))(
+        "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))(
+        "set-receivers",
+        "File containing the receivers to save, Format : "
+        "rcv1_x,rcv1_y,rcv1_z\\n rcv2_x,rcv2_y,rcv2_z\\n...",
+        cxxopts::value<std::string>(o.receivers_file))
         "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
         ("snapshot", "Enbale snapshots", cxxopts::value<bool>(o.enableSnapshots))
         ("save-interval", "Choose intervall beetween snaphots (default is 50 timestep)", cxxopts::value<int>(o.intervalSnapshots));

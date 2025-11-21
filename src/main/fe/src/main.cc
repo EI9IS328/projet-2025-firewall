@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
     try
     {
       opt.validate();
+      cout << "[DEBUG] receiver file = " << opt.receivers_file << endl;
     }
     catch (const std::exception &e)
     {
