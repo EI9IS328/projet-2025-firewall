@@ -76,6 +76,8 @@ class SEMproxy
 
   void saveSnapshot(int timestep);
 
+  void parse_receivers_file(const SemProxyOptions& opt);
+
  private:
   int i1 = 0;
   int i2 = 1;
@@ -105,6 +107,7 @@ class SEMproxy
   const float f0 = 5.;
   const int sourceOrder = 2;
   int myElementSource = 0;
+  int nbReceivers = 1;
 
   std::shared_ptr<model::ModelApi<float, int>> m_mesh;
   std::unique_ptr<SEMSolverBase> m_solver;
@@ -118,6 +121,7 @@ class SEMproxy
   arrayReal rhsWeights;
   arrayReal rhsWeightsRcv;
   arrayReal pnAtReceiver;
+  arrayReal rcvCoords;
 
   // initialize source and RHS
   void init_source();
