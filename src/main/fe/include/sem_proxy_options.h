@@ -83,7 +83,6 @@ class SemProxyOptions
         "File containing the receivers to save, Format : "
         "rcv1_x,rcv1_y,rcv1_z\\n rcv2_x,rcv2_y,rcv2_z\\n...",
         cxxopts::value<std::string>(o.receivers_file))
-        "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
         ("snapshot", "Enbale snapshots", cxxopts::value<bool>(o.enableSnapshots))
         ("save-interval", "Choose intervall beetween snaphots (default is 50 timestep)", cxxopts::value<int>(o.intervalSnapshots));
   }
