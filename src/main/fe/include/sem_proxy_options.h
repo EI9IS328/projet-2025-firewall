@@ -77,7 +77,7 @@ class SemProxyOptions
         "(false)",
         cxxopts::value<bool>(o.isModelOnNodes))(
         "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))(
-        "set-receiver",
+        "set-receivers",
         "File containing the receivers to save, Format : "
         "rcv1_x,rcv1_y,rcv1_z\\n rcv2_x,rcv2_y,rcv2_z\\n...",
         cxxopts::value<std::string>(o.receivers_file));
