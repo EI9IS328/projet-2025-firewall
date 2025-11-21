@@ -192,7 +192,13 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Order of approximation will be " << order << std::endl;
   std::cout << "Time step is " << dt_ << "s" << std::endl;
   std::cout << "Simulated time is " << timemax_ << "s" << std::endl;
+  std::cout << "Snapshot enabled: " << is_snapshots_ << std::endl;
+  std::cout << "Snapshot interval is " << snap_time_interval_ << std::endl;
+  std::cout << "Number of receivers is " << nbReceivers << std::endl;
+  std::cout << "Ex=" << ex << " Ey=" << ey << " Ez=" << ez << std::endl;
+
 }
+
 
 void SEMproxy::generate_snapshot(int indexTimeSample)
 {
