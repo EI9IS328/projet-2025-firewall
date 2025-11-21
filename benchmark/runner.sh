@@ -1,8 +1,8 @@
 EXECUTABLE_PATH="../build/bin/semproxy"
-PROBLEM_SIZE="20 30 40 50"
-ENABLE_SNAPSHOTS=false
-SNAPSHOT_FREQUENCY=20
-MAX_TIME=0.2
+PROBLEM_SIZE="20"
+ENABLE_SNAPSHOTS=true
+SNAPSHOT_FREQUENCY=50
+MAX_TIME=2.0
 RECEIVERS_FILES="1"
 FOLDER=$(date '+%Y-%m-%d-%H:%M:%S')
 
@@ -35,3 +35,16 @@ done
 
 echo "Formatting results..."
 python3 formatter.py "${FOLDER}"
+
+#cd "$FOLDER"
+
+echo "Generating plots..."
+for snapshot in *.txt; do
+    Rscript pressure_map.R $snapshot
+done
+
+echo "ffconcat version 1.0" > concat.txt 
+for image in *.png; do
+    echo "file ${image}" >> concat.txt
+done
+ffmpeg -f concat -safe 0 -r 1 -i concat.txt animation.mp4
