@@ -241,6 +241,91 @@ std::filesystem::path dir = snap_folder_;
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
 }
 
+void SEMproxy::export_ppm_xy_slice(int indexTimeSample){
+  std::stringstream filename;
+  std::filesystem::path dir = snap_folder_;
+
+    if (!std::filesystem::exists(dir)) {
+        if (! std::filesystem::create_directory(dir)) {
+            std::cout << "Failed to create directory.\n";
+        }
+    }
+  filename << snap_folder_ << "/heatmap_xy_" << indexTimeSample << ".ppm";
+  int numNodes = m_mesh->getNumberOfNodes();
+
+  std::ofstream outfile(filename.str());
+  if (!outfile)
+  {
+    std::cerr << "Error: Could not open file " << filename.str() << std::endl;
+    return;
+  }
+
+  int width = nb_elements_[0]*m_mesh->getOrder();
+  int height = nb_elements_[1]*m_mesh->getOrder();
+
+  outfile << "P3\n" << width << " " << height << "\n" << 255 << "\n";
+
+  struct Pixel { int r=0, g=0, b=0; };
+  std::vector<std::vector<Pixel>> slice_pixels(height, std::vector<Pixel>(width));
+
+  std::vector<float> all_pressures;
+  float p_min = 0.0f, p_max = 0.0f;
+  bool first = true;
+
+  float min_coord1 = 0;
+  float min_coord2 = 0;
+  float spacing1 = m_mesh->getMinSpacing();
+  float slice_coord = domain_size_[2] / 2.0f;
+
+  for (int n = 0; n < m_mesh->getNumberOfNodes(); ++n)
+  {
+    if (std::abs(m_mesh->nodeCoord(n, 2) - slice_coord) < spacing1)
+    {
+      float p = pnGlobal(n, i1);
+      all_pressures.push_back(p);
+      if (first)
+      {
+        p_min = p;
+        p_max = p;
+        first = false;
+      }
+      else
+      {
+        if (p < p_min) p_min = p;
+        if (p > p_max) p_max = p;
+      }
+    }
+  }
+  
+  float abs_max = std::max(std::abs(p_min), std::abs(p_max));
+  if (abs_max == 0.0f) abs_max = 1.0f;
+
+  for (int n = 0; n < m_mesh->getNumberOfNodes(); ++n)
+  {
+    if (std::abs(m_mesh->nodeCoord(n, 2) - slice_coord) < spacing1)
+    {
+      int i = static_cast<int>(round((m_mesh->nodeCoord(n, 0) - min_coord1) / spacing1));
+      int j = static_cast<int>(round((m_mesh->nodeCoord(n, 1) - min_coord2) / spacing1));
+
+      if (i >= 0 && i < width && j >= 0 && j < height) {
+        float p = pnGlobal(n, i1);
+        float normalized_p = p / abs_max;
+        slice_pixels[j][i].r = (normalized_p > 0.0f) ? static_cast<int>(255 * normalized_p) : 0;
+        slice_pixels[j][i].b = (normalized_p < 0.0f) ? static_cast<int>(255 * -normalized_p) : 0;
+      }
+    }
+  }
+
+  for (int j = height - 1; j >= 0; --j) {
+    for (int i = 0; i < width; ++i) {
+      outfile << slice_pixels[j][i].r << " " << slice_pixels[j][i].g << " " << slice_pixels[j][i].b << "\n";
+    }
+  }
+  outfile.close();
+  
+
+}
+
 void SEMproxy::run()
 {
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
@@ -286,6 +371,7 @@ void SEMproxy::run()
     {
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
+      export_ppm_xy_slice(indexTimeSample);
     }
     if (is_snapshots_ && indexTimeSample%snap_time_interval_ ==0){
         generate_snapshot(indexTimeSample);
