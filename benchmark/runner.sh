@@ -1,5 +1,5 @@
 EXECUTABLE_PATH="../build/bin/semproxy"
-PROBLEM_SIZE="50 100 200 300"
+PROBLEM_SIZE="20 30"
 ENABLE_SNAPSHOTS=true
 SNAPSHOT_FREQUENCY=50
 MAX_TIME=0.2
@@ -42,6 +42,8 @@ echo "Generating plots..."
 for snapshot in *.snapshot; do
     Rscript ../pressure_map.R $snapshot
 done
+
+Rscript ../version_cmp.R output
 
 echo "ffconcat version 1.0" > concat.txt 
 for image in *.png; do
