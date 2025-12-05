@@ -245,6 +245,58 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
 }
 
+void SEMproxy::generate_in_situ_stats(int indexTimeSample)
+{
+  std::stringstream filename;
+  std::filesystem::path dir = insitu_folder_;
+
+  if (!std::filesystem::exists(dir))
+  {
+    if (!std::filesystem::create_directory(dir))
+    {
+      std::cout << "Failed to create directory.\n";
+    }
+  }
+  filename << insitu_folder_ << "/in-situ-stats" << std::setfill('0')
+           << std::setw(6) << indexTimeSample << ".insitu";
+  int numNodes = m_mesh->getNumberOfNodes();
+
+  std::ofstream outfile(filename.str());
+  if (!outfile)
+  {
+    std::cerr << "Error: Could not open file " << filename.str() << std::endl;
+    return;
+  }
+
+  float min = pnGlobal(0, i1);
+  float max = pnGlobal(0, i1);
+  float mean = 0;
+  float var = 0;
+
+  for (int n = 0; n < numNodes; ++n)
+  {
+    float p = pnGlobal(n, i1);
+    if (p < min) min = p;
+    if (p > max) max = p;
+    mean += p;
+  }
+  for (int n = 0; n < numNodes; ++n)
+  {
+    float p = pnGlobal(n, i1);
+    var += (p - mean) * (p - mean);
+  }
+  var = var / numNodes;
+  double standardDeviation = sqrt(var);
+  outfile << "min " << min << "\n";
+  outfile << "max " << max << "\n";
+  outfile << "mean " << mean / numNodes << "\n";
+  outfile << "std " << standardDeviation << "\n";
+
+  outfile.close();
+
+  std::cout << "Saved in situ analysis to: " << filename.str() << std::endl;
+}
+
 void SEMproxy::export_ppm_xy_slice(int indexTimeSample)
 {
   std::stringstream filename;
@@ -392,7 +444,7 @@ void SEMproxy::run()
     {
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
-      export_ppm_xy_slice(indexTimeSample);
+      git
     }
     if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
     {
@@ -401,6 +453,8 @@ void SEMproxy::run()
     if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
     {
       // call function to compute in-situ stats
+      generate_in_situ_stats(indexTimeSample);
+      export_ppm_xy_slice(indexTimeSample);
     }
 
     // Save pressure at receiver
