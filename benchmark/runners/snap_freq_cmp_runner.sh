@@ -25,7 +25,7 @@ echo "Running benchmarks..."
 for pb_size in $PROBLEM_SIZE; do
     for snap_freq in $SNAPSHOT_FREQUENCY; do
         echo "Problem size: ${pb_size}, Snapshot Frequency: ${snap_freq}"
-        "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $snap_freq --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+        "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $snap_freq --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_snapshots_${pb_size}_${snap_freq}"
     done
 done
 
