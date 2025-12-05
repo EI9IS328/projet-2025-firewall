@@ -48,7 +48,7 @@ make install
 ```
 
 At CREMI
-````sh
+```sh
 export PATH="$PATH:/opt/nvidia/hpc_sdk/Linux_x86_64/23.9/cuda/12.2/bin"
 mkdir build
 cd build
@@ -71,6 +71,21 @@ Both SEM and FD applications are compiled.
 # Run SEM similation with sismos and snapshots enabled
 ./bin/semproxy --sismos --set-receivers "../src/samples/receivers.sample" --snapshot
 ```
+
+### Application options
+
+- `--sismos` 
+- `--set-receivers [file]`
+- `--sismos-folder [foldername]`
+- `--snapshots`
+- `--snap-folder [foldername]`
+- `--save-interval [interval]`
+- `--in-situ`
+- `--in-situ-folder [foldername]`
+- `--in-situ-interval [interval]`
+
+
+
 
 ---
 
