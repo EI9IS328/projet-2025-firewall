@@ -298,9 +298,12 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   outfile << "mean " << mean / numNodes << "\n";
   outfile << "std " << standardDeviation << "\n";
   outfile << "Histogram of the pressure distribution\n";
+  float bar = min;
   for (int i = 0; i < nbBars; i++)
   {
-    outfile << "bar" << i << " " << histogram[i] << "\n";
+    outfile << "bar" << i << " of range " << bar << " to " << bar + barWidth
+            << " " << histogram[i] << "\n";
+    bar += barWidth;
   }
 
   outfile.close();
