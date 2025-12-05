@@ -23,8 +23,8 @@ mkdir -p "${FOLDER}"
 
 echo "Running benchmarks..."
 for pb_size in $PROBLEM_SIZE; do
-    echo "Problem size: ${pb_size}, Snapshot Frequency: ${snap_freq}"
-    "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $snap_freq --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+    echo "Problem size: ${pb_size}, Snapshot Frequency: ${SNAPSHOT_FREQUENCY}"
+    "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
     "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} > "${FOLDER}/output_snapshots_${pb_size}_no_snap"
 done
 
