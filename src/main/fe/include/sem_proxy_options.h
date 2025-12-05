@@ -32,6 +32,8 @@ class SemProxyOptions
   bool enableSismos = false;
   std::string folderSnapshots = "../snapshots";
   std::string folderSismos = "../sismos";
+  bool enableInSitu = false;
+  std::string folderInSitu = "../in-situ";
 
   void validate() const
   {
@@ -85,12 +87,20 @@ class SemProxyOptions
         "set-receivers",
         "File containing the receivers to save, Format : "
         "rcv1_x,rcv1_y,rcv1_z\\n rcv2_x,rcv2_y,rcv2_z\\n...",
-        cxxopts::value<std::string>(o.receivers_file))
-        ("snapshot", "Enbale snapshots", cxxopts::value<bool>(o.enableSnapshots))
-        ("save-interval", "Choose intervall beetween snaphots (default is 50 timestep)", cxxopts::value<int>(o.intervalSnapshots))
-        ("sismos", "Enbale sismo saving", cxxopts::value<bool>(o.enableSismos))
-        ("snap-folder", "Choose the folder to save the snapshotq in",cxxopts::value<std::string>(o.folderSnapshots))
-        ("sismos-folder", "Choose the folder to save the sismos in", cxxopts::value<std::string>(o.folderSismos))
-        ;
+        cxxopts::value<std::string>(o.receivers_file))(
+        "snapshot", "Enbale snapshots",
+        cxxopts::value<bool>(o.enableSnapshots))(
+        "save-interval",
+        "Choose intervall beetween snaphots (default is 50 timestep)",
+        cxxopts::value<int>(o.intervalSnapshots))(
+        "sismos", "Enbale sismo saving", cxxopts::value<bool>(o.enableSismos))(
+        "snap-folder", "Choose the folder to save the snapshots in",
+        cxxopts::value<std::string>(o.folderSnapshots))(
+        "sismos-folder", "Choose the folder to save the sismos in",
+        cxxopts::value<std::string>(o.folderSismos))(
+        "in-situ", "Enbale in-situ analysis",
+        cxxopts::value<bool>(o.enableInSitu))(
+        "in-situ-folder", "Choose the folder to save the in-situ data in",
+        cxxopts::value<std::string>(o.folderInSitu));
   }
 };

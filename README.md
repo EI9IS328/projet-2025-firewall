@@ -47,6 +47,15 @@ cmake ..
 make install
 ```
 
+At CREMI
+````sh
+export PATH="$PATH:/opt/nvidia/hpc_sdk/Linux_x86_64/23.9/cuda/12.2/bin"
+mkdir build
+cd build
+cmake -D USE_VECTOR=OFF -D USE_KOKKOS=ON -D ENABLE_CUDA=ON ..
+make
+```
+
 By default, this builds the applications in sequential mode using `std::vector`.
 Both SEM and FD applications are compiled.
 
@@ -58,6 +67,9 @@ Both SEM and FD applications are compiled.
 
 # Run FD simulation
 ./src/main/fdproxy
+
+# Run SEM similation with sismos and snapshots enabled
+./bin/semproxy --sismos --set-receivers "../src/samples/receivers.sample" --snapshot
 ```
 
 ---
