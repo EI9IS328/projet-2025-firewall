@@ -140,7 +140,7 @@ class SEMproxy
 
   // snapshot
   void generate_snapshot(int indexTimeSample);
-  void export_ppm_xy_slice(int indexTimeSample);
+  void export_ppm_slice(int indexTimeSample, int dim);
 };
 
 #endif /* SEMPROXY_HPP_ */
