@@ -272,6 +272,8 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   float max = pnGlobal(0, i1);
   float mean = 0;
   float var = 0;
+  int nbBars = 10;
+  std::vector<int> histogram(nbBars, 0);
 
   for (int n = 0; n < numNodes; ++n)
   {
@@ -280,10 +282,14 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
     if (p > max) max = p;
     mean += p;
   }
+  int index;
+  float barWidth = (max - min) / nbBars;
   for (int n = 0; n < numNodes; ++n)
   {
     float p = pnGlobal(n, i1);
     var += (p - mean) * (p - mean);
+    index = (p - min) / barWidth;
+    histogram[index] += 1;
   }
   var = var / numNodes;
   double standardDeviation = sqrt(var);
@@ -291,6 +297,11 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   outfile << "max " << max << "\n";
   outfile << "mean " << mean / numNodes << "\n";
   outfile << "std " << standardDeviation << "\n";
+  outfile << "Histogram of the pressure distribution\n";
+  for (int i = 0; i < nbBars; i++)
+  {
+    outfile << "bar" << i << " " << histogram[i] << "\n";
+  }
 
   outfile.close();
 
@@ -444,7 +455,6 @@ void SEMproxy::run()
     {
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
-      git
     }
     if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
     {
