@@ -22,6 +22,7 @@ ggplot(df, aes(x = Nodes, y = Total.Time, color = Snapshot.Enabled)) +
   geom_line(aes(group = Snapshot.Enabled)) +
   geom_point(size= 2) +
   scale_color_manual(values = c("#D991BA","#58508D")) +
+  scale_y_log10() +
   theme_minimal() +
   theme(
     legend.position = c(0.05, 0.95),
