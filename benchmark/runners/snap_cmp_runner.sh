@@ -14,8 +14,8 @@ else
     exit 1
 fi
 
-mkdir -p ../build
-cd ../build
+mkdir -p ../../build
+cd ../../build
 cmake ..
 make
 cd ../benchmark
