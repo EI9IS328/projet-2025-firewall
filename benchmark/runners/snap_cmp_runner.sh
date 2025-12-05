@@ -7,10 +7,10 @@ RECEIVERS_FILES="1"
 FOLDER=$(date '+%Y-%m-%d-%H:%M:%S')
 
 current_dir=$(pwd)
-if [[ $current_dir == *benchmark ]]; then
+if [[ $current_dir == *runners ]]; then
   echo "Compiling project"
 else
-    echo "cd to benchmark directory to run the benchmark"
+    echo "cd to runners directory to run the benchmark"
     exit 1
 fi
 
