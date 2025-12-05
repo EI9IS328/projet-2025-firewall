@@ -94,6 +94,7 @@ class SEMproxy
   bool is_snapshots_;
   int snap_time_interval_;
   std::string snap_folder_;
+  bool save_slices;
 
   std::string sismos_folder_;
   bool is_sismos_;
@@ -140,6 +141,7 @@ class SEMproxy
 
   // snapshot
   void generate_snapshot(int indexTimeSample);
+  void generate_snapshot_slice(int indexTimeSample, int dim);
   void export_ppm_xy_slice(int indexTimeSample);
 };
 
