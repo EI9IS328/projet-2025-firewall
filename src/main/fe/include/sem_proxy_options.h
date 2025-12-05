@@ -33,6 +33,7 @@ class SemProxyOptions
   std::string folderSnapshots = "../snapshots";
   std::string folderSismos = "../sismos";
   bool enableInSitu = false;
+  int intervalInSitu = 50;
   std::string folderInSitu = "../in-situ";
 
   void validate() const
@@ -101,6 +102,10 @@ class SemProxyOptions
         "in-situ", "Enbale in-situ analysis",
         cxxopts::value<bool>(o.enableInSitu))(
         "in-situ-folder", "Choose the folder to save the in-situ data in",
-        cxxopts::value<std::string>(o.folderInSitu));
+        cxxopts::value<std::string>(o.folderInSitu))(
+        "in-situ-interval",
+        "Choose intervall beetween in-situ computations (default is 50 "
+        "timestep)",
+        cxxopts::value<int>(o.intervalInSitu));
   }
 };

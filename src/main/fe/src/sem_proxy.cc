@@ -104,6 +104,10 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   snap_folder_ = opt.folderSnapshots;
   sismos_folder_ = opt.folderSismos;
 
+  is_insitu_ = opt.enableInSitu;
+  insitu_folder_ = opt.folderInSitu;
+  insitu_time_interval_ = opt.intervalInSitu;
+
   bool isModelOnNodes = opt.isModelOnNodes;
   isElastic_ = opt.isElastic;
   cout << boolalpha;
@@ -393,6 +397,10 @@ void SEMproxy::run()
     if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
     {
       generate_snapshot(indexTimeSample);
+    }
+    if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
+    {
+      // call function to compute in-situ stats
     }
 
     // Save pressure at receiver

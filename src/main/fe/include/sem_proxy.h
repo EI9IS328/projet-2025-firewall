@@ -98,6 +98,9 @@ class SEMproxy
   std::string sismos_folder_;
   bool is_sismos_;
 
+  std::string insitu_folder_;
+  bool is_insitu_;
+  int insitu_time_interval_;
   // physics
   bool isElastic_;
 
