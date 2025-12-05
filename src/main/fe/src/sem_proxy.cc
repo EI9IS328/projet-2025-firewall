@@ -301,7 +301,7 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim){
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
 }
 
-void SEMproxy::export_ppm_slice(int indexTimeSample, int dim){{
+void SEMproxy::export_ppm_slice(int indexTimeSample, int dim){
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
 
