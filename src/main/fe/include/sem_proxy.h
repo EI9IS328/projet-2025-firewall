@@ -98,6 +98,9 @@ class SEMproxy
   std::string sismos_folder_;
   bool is_sismos_;
 
+  std::string insitu_folder_;
+  bool is_insitu_;
+  int insitu_time_interval_;
   // physics
   bool isElastic_;
 
@@ -141,6 +144,8 @@ class SEMproxy
   // snapshot
   void generate_snapshot(int indexTimeSample);
   void export_ppm_xy_slice(int indexTimeSample);
+
+  void generate_in_situ_stats(int indexTimeSample);
 };
 
 #endif /* SEMPROXY_HPP_ */

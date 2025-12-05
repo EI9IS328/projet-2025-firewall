@@ -262,6 +262,7 @@ __marimo__/
 *.swp
 *snapshot*
 *sismos*
+*in-situ*
 *~
 compile_commands.json
 src/LvArra*
