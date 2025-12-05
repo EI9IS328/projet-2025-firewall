@@ -30,6 +30,7 @@ class SemProxyOptions
   bool enableSnapshots = false;
   int intervalSnapshots = 50;
   bool enableSismos = false;
+  bool saveSlices = false;
   std::string folderSnapshots = "../snapshots";
   std::string folderSismos = "../sismos";
 
@@ -88,6 +89,7 @@ class SemProxyOptions
         cxxopts::value<std::string>(o.receivers_file))
         ("snapshot", "Enbale snapshots", cxxopts::value<bool>(o.enableSnapshots))
         ("save-interval", "Choose intervall beetween snaphots (default is 50 timestep)", cxxopts::value<int>(o.intervalSnapshots))
+        ("slices", "Save slices snapshots (visualisation only)", cxxopts::value<bool>(o.saveSlices))
         ("sismos", "Enbale sismo saving", cxxopts::value<bool>(o.enableSismos))
         ("snap-folder", "Choose the folder to save the snapshotq in",cxxopts::value<std::string>(o.folderSnapshots))
         ("sismos-folder", "Choose the folder to save the sismos in", cxxopts::value<std::string>(o.folderSismos))
