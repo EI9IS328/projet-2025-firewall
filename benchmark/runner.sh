@@ -1,5 +1,5 @@
 EXECUTABLE_PATH="../build/bin/semproxy"
-PROBLEM_SIZE="20"
+PROBLEM_SIZE="20 30"
 ENABLE_SNAPSHOTS=true
 SNAPSHOT_FREQUENCY=50
 MAX_TIME=0.2
@@ -26,9 +26,9 @@ for pb_size in $PROBLEM_SIZE; do
     for recv_file in $RECEIVERS_FILES; do
         echo "Problem size: ${pb_size}, Receivers file: ${recv_file}"
         if [[ "$ENABLE_SNAPSHOTS" == false ]] ; then
-            "$EXECUTABLE_PATH" --ex ${pb_size} --timemax ${MAX_TIME} --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_no_snapshots_${pb_size}"
+            "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_no_snapshots_${pb_size}"
         else
-            "$EXECUTABLE_PATH" --ex ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+            "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
         fi
     done
 done
@@ -42,6 +42,8 @@ echo "Generating plots..."
 for snapshot in *.snapshot; do
     Rscript ../pressure_map.R $snapshot
 done
+
+Rscript ../version_cmp.R output
 
 echo "ffconcat version 1.0" > concat.txt 
 for image in *.png; do
