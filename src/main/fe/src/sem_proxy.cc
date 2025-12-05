@@ -99,6 +99,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   is_snapshots_ = opt.enableSnapshots;
   snap_time_interval_ = opt.intervalSnapshots;
+  save_slices = opt.saveSlices;
 
   is_sismos_ = opt.enableSismos;
   snap_folder_= opt.folderSnapshots;
@@ -241,7 +242,66 @@ std::filesystem::path dir = snap_folder_;
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
 }
 
-void SEMproxy::export_ppm_slice(int indexTimeSample, int dim){
+void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim){
+  std::stringstream filename;
+  std::filesystem::path dir = snap_folder_;
+
+    if (!std::filesystem::exists(dir)) {
+        if (! std::filesystem::create_directory(dir)) {
+            std::cout << "Failed to create directory.\n";
+        }
+    }
+
+  std::string name;
+  switch (dim)
+  {
+  case 0:
+    name = "yz";
+    break;
+  case 1:
+    name = "xz";
+    break;
+  case 2:
+    name = "xy";
+    break;
+  default:
+    break;
+  }
+
+  filename << snap_folder_ << "/snapshot_" << name << "_" 
+           << std::setfill('0') << std::setw(6) << indexTimeSample << ".snapshot";
+
+  int numNodes = m_mesh->getNumberOfNodes();
+  float spacing1 = m_mesh->getMinSpacing();
+  float slice_coord = domain_size_[2] / 2.0f;
+
+  std::ofstream outfile(filename.str());
+  if (!outfile)
+  {
+    std::cerr << "Error: Could not open file " << filename.str() << std::endl;
+    return;
+  }
+
+  outfile << "x y z pressure\n";
+
+  for (int n = 0; n < numNodes; ++n)
+  {
+    float x = m_mesh->nodeCoord(n, 0);
+    float y = m_mesh->nodeCoord(n, 1);
+    float z = m_mesh->nodeCoord(n, 2);
+    if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1){
+      float p = pnGlobal(n, i1);
+      outfile << x << " " << y << " " << z << " " << p << "\n";
+    }
+    
+  }
+
+  outfile.close();
+
+  std::cout << "Saved snapshot to: " << filename.str() << std::endl;
+}
+
+void SEMproxy::export_ppm_slice(int indexTimeSample, int dim){{
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
 
@@ -400,7 +460,14 @@ void SEMproxy::run()
       export_ppm_slice(indexTimeSample, 2);
     }
     if (is_snapshots_ && indexTimeSample%snap_time_interval_ ==0){
+      if (save_slices){
+        generate_snapshot_slice(indexTimeSample, 0);
+        generate_snapshot_slice(indexTimeSample, 1);
+        generate_snapshot_slice(indexTimeSample, 2);
+      } else {
         generate_snapshot(indexTimeSample);
+      }
+        
     }
 
     // Save pressure at receiver
