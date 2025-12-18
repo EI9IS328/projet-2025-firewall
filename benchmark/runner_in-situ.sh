@@ -35,6 +35,6 @@ done
 
 cd "$FOLDER"
 
-echo "ffconcat version 1.0" > concat.txt 
-ls -v heatmap_xy_*.ppm | while read image; do echo "file ${image}" >> concat.txt; done
+echo "ffconcat version 1.0" > concat.txt
+ls heatmap_xy_*.ppm | sort -V | sed 's/^/file /' >> concat.txt
 ffmpeg -f concat -safe 0 -r 1 -i concat.txt animation.mp4
