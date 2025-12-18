@@ -99,10 +99,15 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   is_snapshots_ = opt.enableSnapshots;
   snap_time_interval_ = opt.intervalSnapshots;
+  save_slices = opt.saveSlices;
 
   is_sismos_ = opt.enableSismos;
-  snap_folder_= opt.folderSnapshots;
+  snap_folder_ = opt.folderSnapshots;
   sismos_folder_ = opt.folderSismos;
+
+  is_insitu_ = opt.enableInSitu;
+  insitu_folder_ = opt.folderInSitu;
+  insitu_time_interval_ = opt.intervalInSitu;
 
   bool isModelOnNodes = opt.isModelOnNodes;
   isElastic_ = opt.isElastic;
@@ -200,22 +205,22 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Snapshot interval is " << snap_time_interval_ << std::endl;
   std::cout << "Number of receivers is " << nbReceivers << std::endl;
   std::cout << "Ex=" << ex << " Ey=" << ey << " Ez=" << ez << std::endl;
-
 }
-
 
 void SEMproxy::generate_snapshot(int indexTimeSample)
 {
-std::stringstream filename;
-std::filesystem::path dir = snap_folder_;
+  std::stringstream filename;
+  std::filesystem::path dir = snap_folder_;
 
-    if (!std::filesystem::exists(dir)) {
-        if (! std::filesystem::create_directory(dir)) {
-            std::cout << "Failed to create directory.\n";
-        }
+  if (!std::filesystem::exists(dir))
+  {
+    if (!std::filesystem::create_directory(dir))
+    {
+      std::cout << "Failed to create directory.\n";
     }
-  filename << snap_folder_ << "/snapshot_" 
-           << std::setfill('0') << std::setw(6) << indexTimeSample << ".snapshot";
+  }
+  filename << snap_folder_ << "/snapshot_" << std::setfill('0') << std::setw(6)
+           << indexTimeSample << ".snapshot";
   int numNodes = m_mesh->getNumberOfNodes();
 
   std::ofstream outfile(filename.str());
@@ -232,13 +237,286 @@ std::filesystem::path dir = snap_folder_;
     float x = m_mesh->nodeCoord(n, 0);
     float y = m_mesh->nodeCoord(n, 1);
     float z = m_mesh->nodeCoord(n, 2);
-    float p = pnGlobal(n, i1);
+    float p = pnGlobal(n, i2);
     outfile << x << " " << y << " " << z << " " << p << "\n";
   }
 
   outfile.close();
 
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
+}
+
+void SEMproxy::generate_in_situ_stats(int indexTimeSample)
+{
+  std::stringstream filename;
+  std::filesystem::path dir = insitu_folder_;
+
+  if (!std::filesystem::exists(dir))
+  {
+    if (!std::filesystem::create_directory(dir))
+    {
+      std::cout << "Failed to create directory.\n";
+    }
+  }
+  filename << insitu_folder_ << "/in-situ-stats" << std::setfill('0')
+           << std::setw(6) << indexTimeSample << ".insitu";
+  int numNodes = m_mesh->getNumberOfNodes();
+
+  std::ofstream outfile(filename.str());
+  if (!outfile)
+  {
+    std::cerr << "Error: Could not open file " << filename.str() << std::endl;
+    return;
+  }
+
+  float min = pnGlobal(0, i2);
+  float max = pnGlobal(0, i2);
+  float mean = 0;
+  float var = 0;
+  int nbBars = 10;
+  std::vector<int> histogram(nbBars, 0);
+
+  for (int n = 0; n < numNodes; ++n)
+  {
+    float p = pnGlobal(n, i2);
+    if (p < min) min = p;
+    if (p > max) max = p;
+    mean += p;
+  }
+  mean = mean / numNodes;
+  int index;
+  float barWidth = (max - min) / nbBars;
+  if (std::abs(max - min) < 1e-9) barWidth = 1.0f;  // Prevent div by zero
+
+  for (int n = 0; n < numNodes; ++n)
+  {
+    float p = pnGlobal(n, i2);
+    var += (p - mean) * (p - mean);
+    if (std::abs(max - min) < 1e-9)
+      index = nbBars / 2;
+    else
+    {
+      index = (p - min) / barWidth;
+      if (index >= nbBars) index = nbBars - 1;
+    }
+    histogram[index] += 1;
+  }
+  var = var / numNodes;
+  double standardDeviation = sqrt(var);
+  outfile << "min " << min << "\n";
+  outfile << "max " << max << "\n";
+  outfile << "mean " << mean << "\n";
+  outfile << "std " << standardDeviation << "\n";
+  outfile << "Histogram of the pressure distribution\n";
+  float bar = min;
+  for (int i = 0; i < nbBars; i++)
+  {
+    outfile << "bar" << i << " of range " << bar << " to " << bar + barWidth
+            << " " << histogram[i] << "\n";
+    bar += barWidth;
+  }
+
+  if (is_sismos_)
+  {
+    outfile << "\nPressure at receivers\n";
+    outfile << "RecvCoords Pressure\n";
+    for (int indexRcv = 0; indexRcv < nbReceivers; indexRcv++)
+    {
+      outfile << "" << rcvCoords(indexRcv, 0) << "," << rcvCoords(indexRcv, 1)
+              << "," << rcvCoords(indexRcv, 2) << " "
+              << pnAtReceiver(indexRcv, indexTimeSample) << "\n";
+    }
+  }
+
+  outfile.close();
+
+  std::cout << "Saved in situ analysis to: " << filename.str() << std::endl;
+}
+
+void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
+{
+  std::stringstream filename;
+  std::filesystem::path dir = snap_folder_;
+
+  if (!std::filesystem::exists(dir))
+  {
+    if (!std::filesystem::create_directory(dir))
+    {
+      std::cout << "Failed to create directory.\n";
+    }
+  }
+
+  std::string name;
+  switch (dim)
+  {
+    case 0:
+      name = "yz";
+      break;
+    case 1:
+      name = "xz";
+      break;
+    case 2:
+      name = "xy";
+      break;
+    default:
+      break;
+  }
+
+  filename << snap_folder_ << "/snapshot_" << name << "_" << std::setfill('0')
+           << std::setw(6) << indexTimeSample << ".snapshot";
+
+  int numNodes = m_mesh->getNumberOfNodes();
+  float spacing1 = m_mesh->getMinSpacing();
+  float slice_coord = domain_size_[2] / 2.0f;
+
+  std::ofstream outfile(filename.str());
+  if (!outfile)
+  {
+    std::cerr << "Error: Could not open file " << filename.str() << std::endl;
+    return;
+  }
+
+  outfile << "x y z pressure\n";
+
+  for (int n = 0; n < numNodes; ++n)
+  {
+    float x = m_mesh->nodeCoord(n, 0);
+    float y = m_mesh->nodeCoord(n, 1);
+    float z = m_mesh->nodeCoord(n, 2);
+    if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
+    {
+      float p = pnGlobal(n, i2);
+      outfile << x << " " << y << " " << z << " " << p << "\n";
+    }
+  }
+
+  outfile.close();
+
+  std::cout << "Saved snapshot to: " << filename.str() << std::endl;
+}
+
+void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
+{
+  std::stringstream filename;
+  std::filesystem::path dir = snap_folder_;
+
+  int firstDim, secondDim;
+  std::string name;
+
+  switch (dim)
+  {
+    case 0:
+      firstDim = 1;
+      secondDim = 2;
+      name = "yz";
+      break;
+    case 1:
+      firstDim = 0;
+      secondDim = 2;
+      name = "xz";
+      break;
+    case 2:
+      firstDim = 0;
+      secondDim = 1;
+      name = "xy";
+      break;
+    default:
+      break;
+  }
+
+  if (!std::filesystem::exists(dir))
+  {
+    if (!std::filesystem::create_directory(dir))
+    {
+      std::cout << "Failed to create directory.\n";
+    }
+  }
+
+  filename << snap_folder_ << "/heatmap_" << name << "_" << indexTimeSample
+           << ".ppm";
+  int numNodes = m_mesh->getNumberOfNodes();
+
+  std::ofstream outfile(filename.str());
+  if (!outfile)
+  {
+    std::cerr << "Error: Could not open file " << filename.str() << std::endl;
+    return;
+  }
+  int width = nb_elements_[firstDim] * m_mesh->getOrder();
+  int height = nb_elements_[secondDim] * m_mesh->getOrder();
+
+  outfile << "P3\n" << width << " " << height << "\n" << 255 << "\n";
+
+  struct Pixel
+  {
+    int r = 0, g = 0, b = 0;
+  };
+  std::vector<std::vector<Pixel>> slice_pixels(height,
+                                               std::vector<Pixel>(width));
+
+  std::vector<float> all_pressures;
+  float p_min = 0.0f, p_max = 0.0f;
+  bool first = true;
+
+  float min_coord1 = 0;
+  float min_coord2 = 0;
+  float spacing1 = m_mesh->getMinSpacing();
+  float slice_coord = domain_size_[dim] / 2.0f;
+
+  for (int n = 0; n < m_mesh->getNumberOfNodes(); ++n)
+  {
+    if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
+    {
+      float p = pnGlobal(n, i2);
+      all_pressures.push_back(p);
+      if (first)
+      {
+        p_min = p;
+        p_max = p;
+        first = false;
+      }
+      else
+      {
+        if (p < p_min) p_min = p;
+        if (p > p_max) p_max = p;
+      }
+    }
+  }
+
+  float abs_max = std::max(std::abs(p_min), std::abs(p_max));
+  if (abs_max == 0.0f) abs_max = 1.0f;
+
+  for (int n = 0; n < m_mesh->getNumberOfNodes(); ++n)
+  {
+    if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
+    {
+      int i = static_cast<int>(
+          round((m_mesh->nodeCoord(n, firstDim) - min_coord1) / spacing1));
+      int j = static_cast<int>(
+          round((m_mesh->nodeCoord(n, secondDim) - min_coord2) / spacing1));
+
+      if (i >= 0 && i < width && j >= 0 && j < height)
+      {
+        float p = pnGlobal(n, i2);
+        float normalized_p = p / abs_max;
+        slice_pixels[j][i].r =
+            (normalized_p > 0.0f) ? static_cast<int>(255 * normalized_p) : 0;
+        slice_pixels[j][i].b =
+            (normalized_p < 0.0f) ? static_cast<int>(255 * -normalized_p) : 0;
+      }
+    }
+  }
+
+  for (int j = height - 1; j >= 0; --j)
+  {
+    for (int i = 0; i < width; ++i)
+    {
+      outfile << slice_pixels[j][i].r << " " << slice_pixels[j][i].g << " "
+              << slice_pixels[j][i].b << "\n";
+    }
+  }
+  std::cout << "Saved heatmap to: " << filename.str() << std::endl;
+  outfile.close();
 }
 
 void SEMproxy::run()
@@ -253,25 +531,29 @@ void SEMproxy::run()
   std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 
   ofstream my_file;
-  if(is_sismos_){
+  if (is_sismos_ && !is_insitu_)
+  {
     std::stringstream filename;
     std::filesystem::path dir = sismos_folder_;
 
-    if (!std::filesystem::exists(dir)) {
-        if (!std::filesystem::create_directory(dir)) {
-            std::cout << "Failed to create directory.\n";
-        }
+    if (!std::filesystem::exists(dir))
+    {
+      if (!std::filesystem::create_directory(dir))
+      {
+        std::cout << "Failed to create directory.\n";
+      }
     }
-    filename <<sismos_folder_<< "/sismos_res.sismos";
+    filename << sismos_folder_ << "/sismos_res.sismos";
 
     my_file.open(filename.str());
-    my_file <<"Time ";
-    for(int indexRcv=0; indexRcv<nbReceivers;indexRcv++){
-      my_file << ""<<rcvCoords(indexRcv,0)<<","<<rcvCoords(indexRcv,1)<<","<<rcvCoords(indexRcv,2)<<" ";
+    my_file << "Time ";
+    for (int indexRcv = 0; indexRcv < nbReceivers; indexRcv++)
+    {
+      my_file << "" << rcvCoords(indexRcv, 0) << "," << rcvCoords(indexRcv, 1)
+              << "," << rcvCoords(indexRcv, 2) << " ";
     }
-    my_file<< "\n";
+    my_file << "\n";
   }
-
 
   for (int indexTimeSample = 0; indexTimeSample < num_sample_;
        indexTimeSample++)
@@ -287,17 +569,32 @@ void SEMproxy::run()
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
     }
-    if (is_snapshots_ && indexTimeSample%snap_time_interval_ ==0){
+    if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
+    {
+      generate_snapshot(indexTimeSample);
+    }
+    if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
+    {
+      if (save_slices)
+      {
+        generate_snapshot_slice(indexTimeSample, 0);
+        generate_snapshot_slice(indexTimeSample, 1);
+        generate_snapshot_slice(indexTimeSample, 2);
+      }
+      else
+      {
         generate_snapshot(indexTimeSample);
+      }
     }
 
     // Save pressure at receiver
     const int order = m_mesh->getOrder();
-    if(is_sismos_){
-      my_file<<indexTimeSample<<" ";
+    if (is_sismos_ && !is_insitu_)
+    {
+      my_file << indexTimeSample << " ";
     }
-    for(int indexRcv=0; indexRcv<nbReceivers; indexRcv++){
-
+    for (int indexRcv = 0; indexRcv < nbReceivers; indexRcv++)
+    {
       float varnp1 = 0.0;
       for (int i = 0; i < order + 1; i++)
       {
@@ -305,35 +602,48 @@ void SEMproxy::run()
         {
           for (int k = 0; k < order + 1; k++)
           {
-            int nodeIdx = m_mesh->globalNodeIndex(rhsElementRcv[indexRcv], i, j, k);
+            int nodeIdx =
+                m_mesh->globalNodeIndex(rhsElementRcv[indexRcv], i, j, k);
             int globalNodeOnElement =
                 i + j * (order + 1) + k * (order + 1) * (order + 1);
-            varnp1 +=
-                pnGlobal(nodeIdx, i2) * rhsWeightsRcv(indexRcv, globalNodeOnElement);
-            //cout << "pn global " << pnGlobal(nodeIdx, i2) << "wheight" <<rhsWeightsRcv(indexRcv, globalNodeOnElement) <<"\n";
+            varnp1 += pnGlobal(nodeIdx, i2) *
+                      rhsWeightsRcv(indexRcv, globalNodeOnElement);
+            // cout << "pn global " << pnGlobal(nodeIdx, i2) << "wheight"
+            // <<rhsWeightsRcv(indexRcv, globalNodeOnElement) <<"\n";
           }
         }
       }
 
       pnAtReceiver(indexRcv, indexTimeSample) = varnp1;
-      if(is_sismos_){
-         my_file << "" <<varnp1<<" ";
+      if (is_sismos_ && !is_insitu_)
+      {
+        my_file << "" << varnp1 << " ";
       }
-      //cout << "" <<varnp1<<" ";
+      // cout << "" <<varnp1<<" ";
     }
     swap(i1, i2);
+    if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
+    {
+      // call function to compute in-situ stats
+      generate_in_situ_stats(indexTimeSample);
+      export_ppm_slice(indexTimeSample, 0);
+      export_ppm_slice(indexTimeSample, 1);
+      export_ppm_slice(indexTimeSample, 2);
+    }
 
     auto tmp = solverData.m_i1;
     solverData.m_i1 = solverData.m_i2;
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
-    if(is_sismos_){
+    if (is_sismos_ && !is_insitu_)
+    {
       my_file << "\n";
     }
-    //cout << "\n";
+    // cout << "\n";
   }
-  if(is_sismos_){
+  if (is_sismos_ && !is_insitu_)
+  {
     my_file.close();
   }
 
@@ -362,7 +672,8 @@ void SEMproxy::init_arrays()
   myRHSTerm = allocateArray2D<arrayReal>(myNumberOfRHS, num_sample_, "RHSTerm");
   pnGlobal =
       allocateArray2D<arrayReal>(m_mesh->getNumberOfNodes(), 2, "pnGlobal");
-  pnAtReceiver = allocateArray2D<arrayReal>(nbReceivers, num_sample_, "pnAtReceiver");
+  pnAtReceiver =
+      allocateArray2D<arrayReal>(nbReceivers, num_sample_, "pnAtReceiver");
   // Receiver
   // Allocate the vectors with the number of receivers
   rhsElementRcv = allocateVector<vectorInt>(nbReceivers, "rhsElementRcv");
@@ -481,7 +792,8 @@ void SEMproxy::init_source()
   }
 
   const int numNodes = m_mesh->getNumberOfPointsPerElement();
-  arrayReal tmpWeights = allocateArray2D<arrayReal>(1, numNodes, "tmpRHSWeight");
+  arrayReal tmpWeights =
+      allocateArray2D<arrayReal>(1, numNodes, "tmpRHSWeight");
   for (int i = 0; i < nbReceivers; i++)
   {
     std::array<float, 3> coords_tmp = {rcvCoords(i, 0), rcvCoords(i, 1),
@@ -489,8 +801,8 @@ void SEMproxy::init_source()
     switch (order)
     {
       case 1:
-        SourceAndReceiverUtils::ComputeRHSWeights<1>(cornerCoordsRcv[i], coords_tmp,
-            tmpWeights);
+        SourceAndReceiverUtils::ComputeRHSWeights<1>(cornerCoordsRcv[i],
+                                                     coords_tmp, tmpWeights);
         break;
       case 2:
         SourceAndReceiverUtils::ComputeRHSWeights<2>(cornerCoordsRcv[i],
@@ -503,8 +815,7 @@ void SEMproxy::init_source()
       default:
         throw std::runtime_error("Unsupported order: " + std::to_string(order));
     }
-    for (int n = 0; n < numNodes; ++n)
-        rhsWeightsRcv(i, n) = tmpWeights(0, n);
+    for (int n = 0; n < numNodes; ++n) rhsWeightsRcv(i, n) = tmpWeights(0, n);
   }
 }
 
