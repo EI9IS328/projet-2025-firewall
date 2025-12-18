@@ -33,6 +33,8 @@ for pb_size in $PROBLEM_SIZE; do
     done
 done
 
+cd "$FOLDER"
+
 echo "ffconcat version 1.0" > concat.txt 
 for image in *.ppm; do
     echo "file ${image}" >> concat.txt
