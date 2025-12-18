@@ -107,8 +107,8 @@ class SemProxyOptions
         "in-situ-interval",
         "Choose intervall beetween in-situ computations (default is 50 "
         "timestep)",
-        cxxopts::value<int>(o.intervalInSitu))
-        ("slices", "Save slices snapshots (visualisation only)", cxxopts::value<bool>(o.saveSlices))
-        ;
+        cxxopts::value<int>(o.intervalInSitu))(
+        "slices", "Save slices snapshots (visualisation only)",
+        cxxopts::value<bool>(o.saveSlices));
   }
 };

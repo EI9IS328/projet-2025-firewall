@@ -312,35 +312,37 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   std::cout << "Saved in situ analysis to: " << filename.str() << std::endl;
 }
 
-
-void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim){
+void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
+{
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
 
-    if (!std::filesystem::exists(dir)) {
-        if (! std::filesystem::create_directory(dir)) {
-            std::cout << "Failed to create directory.\n";
-        }
+  if (!std::filesystem::exists(dir))
+  {
+    if (!std::filesystem::create_directory(dir))
+    {
+      std::cout << "Failed to create directory.\n";
     }
+  }
 
   std::string name;
   switch (dim)
   {
-  case 0:
-    name = "yz";
-    break;
-  case 1:
-    name = "xz";
-    break;
-  case 2:
-    name = "xy";
-    break;
-  default:
-    break;
+    case 0:
+      name = "yz";
+      break;
+    case 1:
+      name = "xz";
+      break;
+    case 2:
+      name = "xy";
+      break;
+    default:
+      break;
   }
 
-  filename << snap_folder_ << "/snapshot_" << name << "_" 
-           << std::setfill('0') << std::setw(6) << indexTimeSample << ".snapshot";
+  filename << snap_folder_ << "/snapshot_" << name << "_" << std::setfill('0')
+           << std::setw(6) << indexTimeSample << ".snapshot";
 
   int numNodes = m_mesh->getNumberOfNodes();
   float spacing1 = m_mesh->getMinSpacing();
@@ -360,11 +362,11 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim){
     float x = m_mesh->nodeCoord(n, 0);
     float y = m_mesh->nodeCoord(n, 1);
     float z = m_mesh->nodeCoord(n, 2);
-    if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1){
+    if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
+    {
       float p = pnGlobal(n, i1);
       outfile << x << " " << y << " " << z << " " << p << "\n";
     }
-    
   }
 
   outfile.close();
@@ -372,7 +374,8 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim){
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
 }
 
-void SEMproxy::export_ppm_slice(int indexTimeSample, int dim){
+void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
+{
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
 
@@ -400,12 +403,15 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim){
       break;
   }
 
-    if (!std::filesystem::exists(dir)) {
-        if (! std::filesystem::create_directory(dir)) {
-            std::cout << "Failed to create directory.\n";
-        }
+  if (!std::filesystem::exists(dir))
+  {
+    if (!std::filesystem::create_directory(dir))
+    {
+      std::cout << "Failed to create directory.\n";
     }
-  filename << snap_folder_ << "/heatmap_" << name << "_" << indexTimeSample << ".ppm";
+  }
+  filename << snap_folder_ << "/heatmap_" << name << "_" << indexTimeSample
+           << ".ppm";
   int numNodes = m_mesh->getNumberOfNodes();
 
   std::ofstream outfile(filename.str());
@@ -415,8 +421,8 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim){
     return;
   }
 
-  int width = nb_elements_[firstDim]*m_mesh->getOrder();
-  int height = nb_elements_[secondDim]*m_mesh->getOrder();
+  int width = nb_elements_[firstDim] * m_mesh->getOrder();
+  int height = nb_elements_[secondDim] * m_mesh->getOrder();
 
   outfile << "P3\n" << width << " " << height << "\n" << 255 << "\n";
 
@@ -463,8 +469,10 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim){
   {
     if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
     {
-      int i = static_cast<int>(round((m_mesh->nodeCoord(n, firstDim) - min_coord1) / spacing1));
-      int j = static_cast<int>(round((m_mesh->nodeCoord(n, secondDim) - min_coord2) / spacing1));
+      int i = static_cast<int>(
+          round((m_mesh->nodeCoord(n, firstDim) - min_coord1) / spacing1));
+      int j = static_cast<int>(
+          round((m_mesh->nodeCoord(n, secondDim) - min_coord2) / spacing1));
 
       if (i >= 0 && i < width && j >= 0 && j < height)
       {
@@ -550,15 +558,18 @@ void SEMproxy::run()
       export_ppm_slice(indexTimeSample, 1);
       export_ppm_slice(indexTimeSample, 2);
     }
-    if (is_snapshots_ && indexTimeSample%snap_time_interval_ ==0){
-      if (save_slices){
+    if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
+    {
+      if (save_slices)
+      {
         generate_snapshot_slice(indexTimeSample, 0);
         generate_snapshot_slice(indexTimeSample, 1);
         generate_snapshot_slice(indexTimeSample, 2);
-      } else {
+      }
+      else
+      {
         generate_snapshot(indexTimeSample);
       }
-        
     }
 
     // Save pressure at receiver
