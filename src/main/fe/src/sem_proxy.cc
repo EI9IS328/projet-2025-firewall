@@ -286,7 +286,7 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   mean = mean / numNodes;
   int index;
   float barWidth = (max - min) / nbBars;
-  if (std::abs(max - min) < 1e-9) barWidth = 1.0f; // Prevent div by zero
+  if (std::abs(max - min) < 1e-9) barWidth = 1.0f;  // Prevent div by zero
 
   for (int n = 0; n < numNodes; ++n)
   {
@@ -314,6 +314,18 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
     outfile << "bar" << i << " of range " << bar << " to " << bar + barWidth
             << " " << histogram[i] << "\n";
     bar += barWidth;
+  }
+
+  if (is_sismos_)
+  {
+    outfile << "\nPressure at receivers\n";
+    outfile << "RecvCoords Pressure\n";
+    for (int indexRcv = 0; indexRcv < nbReceivers; indexRcv++)
+    {
+      outfile << "" << rcvCoords(indexRcv, 0) << "," << rcvCoords(indexRcv, 1)
+              << "," << rcvCoords(indexRcv, 2) << " "
+              << pnAtReceiver(indexRcv, indexTimeSample) << "\n";
+    }
   }
 
   outfile.close();
@@ -519,7 +531,7 @@ void SEMproxy::run()
   std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 
   ofstream my_file;
-  if (is_sismos_)
+  if (is_sismos_ && !is_insitu_)
   {
     std::stringstream filename;
     std::filesystem::path dir = sismos_folder_;
@@ -561,14 +573,6 @@ void SEMproxy::run()
     {
       generate_snapshot(indexTimeSample);
     }
-    if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
-    {
-      // call function to compute in-situ stats
-      generate_in_situ_stats(indexTimeSample);
-      export_ppm_slice(indexTimeSample, 0);
-      export_ppm_slice(indexTimeSample, 1);
-      export_ppm_slice(indexTimeSample, 2);
-    }
     if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
     {
       if (save_slices)
@@ -585,9 +589,9 @@ void SEMproxy::run()
 
     // Save pressure at receiver
     const int order = m_mesh->getOrder();
-    if (is_sismos_)
+    if (is_sismos_ && !is_insitu_)
     {
-      my_file << "t" << indexTimeSample << " ";
+      my_file << indexTimeSample << " ";
     }
     for (int indexRcv = 0; indexRcv < nbReceivers; indexRcv++)
     {
@@ -611,26 +615,34 @@ void SEMproxy::run()
       }
 
       pnAtReceiver(indexRcv, indexTimeSample) = varnp1;
-      if (is_sismos_)
+      if (is_sismos_ && !is_insitu_)
       {
         my_file << "" << varnp1 << " ";
       }
       // cout << "" <<varnp1<<" ";
     }
     swap(i1, i2);
+    if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
+    {
+      // call function to compute in-situ stats
+      generate_in_situ_stats(indexTimeSample);
+      export_ppm_slice(indexTimeSample, 0);
+      export_ppm_slice(indexTimeSample, 1);
+      export_ppm_slice(indexTimeSample, 2);
+    }
 
     auto tmp = solverData.m_i1;
     solverData.m_i1 = solverData.m_i2;
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
-    if (is_sismos_)
+    if (is_sismos_ && !is_insitu_)
     {
       my_file << "\n";
     }
     // cout << "\n";
   }
-  if (is_sismos_)
+  if (is_sismos_ && !is_insitu_)
   {
     my_file.close();
   }
