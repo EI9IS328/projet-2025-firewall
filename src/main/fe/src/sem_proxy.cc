@@ -346,7 +346,7 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
 
   int numNodes = m_mesh->getNumberOfNodes();
   float spacing1 = m_mesh->getMinSpacing();
-  float slice_coord = domain_size_[2] / 2.0f;
+  float slice_coord = domain_size_[dim] / 2.0f;
 
   std::ofstream outfile(filename.str());
   if (!outfile)
