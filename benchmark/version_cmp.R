@@ -11,7 +11,6 @@ df <- read.table(input_file, header = T, sep =",")
 ggplot(df, aes(x = Nodes, y = Total.Time)) +
   geom_line(color = "#161B33") +
   geom_point(size= 2, color = "#D991BA") +
-  theme_minimal() +
   theme(legend.position = "none") +
   xlab("Nodes") +
   ylab("Total Time (s)")
@@ -23,7 +22,6 @@ ggplot(df, aes(x = Nodes, y = Total.Time, color = Snapshot.Enabled)) +
   geom_point(size= 2) +
   scale_color_manual(values = c("#D991BA","#58508D")) +
   scale_y_log10() +
-  theme_minimal() +
   theme(
     legend.position = c(0.05, 0.95),
     legend.justification = c("left", "top"),
@@ -39,7 +37,6 @@ ggsave(paste(input_file, "_snapshot_cmp.png", sep = ""), width = 8, height = 6)
 ggplot(df, aes(x = Snapshot.Interval, y = Total.Time)) +
   geom_line(color = "#161B33") +
   geom_point(size= 2, color = "#D991BA") +
-  theme_minimal() +
   theme(legend.position = "none") +
   xlab("Snapshots interval (iteration)") +
   ylab("Total Time (s)")
@@ -49,7 +46,6 @@ ggsave(paste(input_file, "_snapshot_interval.png", sep = ""), width = 8, height 
 ggplot(df, aes(x = Receivers, y = Total.Time)) +
   geom_line(color = "#161B33") +
   geom_point(size= 2, color = "#D991BA") +
-  theme_minimal() +
   theme(legend.position = "none") +
   xlab("Number of receivers") +
   ylab("Total Time (s)")
