@@ -290,6 +290,7 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
     float p = pnGlobal(n, i1);
     var += (p - mean) * (p - mean);
     index = (p - min) / barWidth;
+    if (index >= nbBars) index = nbBars - 1;
     histogram[index] += 1;
   }
   var = var / numNodes;
@@ -410,6 +411,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
       std::cout << "Failed to create directory.\n";
     }
   }
+
   filename << snap_folder_ << "/heatmap_" << name << "_" << indexTimeSample
            << ".ppm";
   int numNodes = m_mesh->getNumberOfNodes();
@@ -420,7 +422,6 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
     std::cerr << "Error: Could not open file " << filename.str() << std::endl;
     return;
   }
-
   int width = nb_elements_[firstDim] * m_mesh->getOrder();
   int height = nb_elements_[secondDim] * m_mesh->getOrder();
 
@@ -494,6 +495,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
               << slice_pixels[j][i].b << "\n";
     }
   }
+  std::cout << "Saved heatmap to: " << filename.str() << std::endl;
   outfile.close();
 }
 
