@@ -8,36 +8,34 @@ library(ggpubr)
 #             File reader part                   #
 ##################################################
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) == 0) stop("No file provided")
+
+if (length(args) == 0) {
+  stop("No file provided")
+}
 
 file <- args[1]
+
 df <- read.table(file, header = TRUE)
 
 ##################################################
-#                Reshape                         #
+#                 function                       #
 ##################################################
-values <- unlist(df[, 2:ncol(df)])
-receivers <- rep(colnames(df)[2:ncol(df)], each = nrow(df))
+# Combine all receiver columns (exclude the first TimeStep column)
+if (ncol(df) < 2) {
+  stop("No receiver columns found")
+}
+pression <- as.numeric(unlist(df[ , -1]))
+dataframe <- data.frame(pres = pression)
 
-long_df <- data.frame(
-  receiver = receivers,
-  pressure = values
-)
+graph <- ggplot(dataframe, aes(x = pres)) +
+  geom_histogram(fill = "darkorchid4", color = "darkgray", bins = 30) +
+  scale_x_continuous(name = "Pressure") +
+  ylab("Count") +
+  theme_minimal()
 
-##################################################
-#                   Boxplot                      #
-##################################################
-graph <- ggplot(long_df, aes(x = receiver, y = pressure)) +
-  geom_boxplot(outlier.alpha = 0.3) +
-  labs(
-    title = "Statistiques descriptives des sismos",
-    x = "Receiver",
-    y = "Pression"
-  )
 
 ##################################################
 #             Save graph part                    #
 ##################################################
 dir.create("graph", showWarnings = FALSE)
-ggsave("graph/graph_descriptive_stats_sismos.png",
-       graph, width = 10, height = 8, dpi = 300, bg = "white")
+ggsave(paste("graph/graph_pression_distribution.png"), plot = graph, width = 8, height = 6, dpi = 300, bg = "white")

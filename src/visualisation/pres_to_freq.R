@@ -1,7 +1,13 @@
+##################################################
+#                 Library                        #
+##################################################
 library(ggplot2)
 library(ggpubr)
-setwd("~/in-situ/projet-2025-firewall/src/visualisation")
 
+
+##################################################
+#             File reader part                   #
+##################################################
 args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) == 0) {
@@ -9,17 +15,23 @@ if (length(args) == 0) {
 }
 
 file <- args[1]
-cat("file", file, "\n")
+
 df <- read.table(file, header = TRUE)
 
 #df <- read.table("../samples/sismos.sample", header = TRUE)
 
-
+##################################################
+#                 parameter                      #
+##################################################
 dt <- 0.001   # time between two steps
 Fs <- 1 / dt  # freq
 N  <- nrow(df)  # nb rcv
 
 
+
+##################################################
+#                 functions                      #
+##################################################
 
 compute_fft <- function(signal, Fs) {
   N <- length(signal)
@@ -55,10 +67,14 @@ for (receiver in 2:ncol(df)) {
 }
 
 
+
+##################################################
+#             Save graph part                    #
+##################################################
 Ncol <- ceiling(sqrt(ncol(df)))
 
 
 all_graph <- ggarrange(plotlist = plots, ncol = Ncol, nrow = Ncol)
 
-
+dir.create("graph", showWarnings = FALSE)
 ggsave(paste("graph/graph_freq.png"), plot = all_graph, width = 8, height = 6, dpi = 300, bg = "white")

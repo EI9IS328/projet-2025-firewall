@@ -294,7 +294,7 @@ void SEMproxy::run()
     // Save pressure at receiver
     const int order = m_mesh->getOrder();
     if(is_sismos_){
-      my_file<<"t"<<indexTimeSample<<" ";
+      my_file<<indexTimeSample<<" ";
     }
     for(int indexRcv=0; indexRcv<nbReceivers; indexRcv++){
 

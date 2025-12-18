@@ -1,8 +1,12 @@
+##################################################
+#                 Library                        #
+##################################################
 library(ggplot2)
 library(ggpubr)
 
-setwd("~/in-situ/projet-2025-firewall/src/visualisation")
-
+##################################################
+#             File reader part                   #
+##################################################
 args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) == 0) {
@@ -10,17 +14,23 @@ if (length(args) == 0) {
 }
 
 file <- args[1]
-cat("file", file, "\n")
+
+
 df <- read.table(file, header = TRUE)
 
 
+##################################################
+#                 parameter                      #
+##################################################
 dt <- 0.001          
 Fs <- 1 / dt         
 N  <- nrow(df)      
-time <- (df$TimeStep - df$TimeStep[1]) * dt 
+time <- (df$Time- df$Time[1]) * dt 
 
 
-
+##################################################
+#                 functions                      #
+##################################################
 compute_envelope <- function(signal, window_size) {
   
   signal_abs <- abs(signal)
@@ -81,7 +91,9 @@ for (receiver in 2:ncol(df)) {
   
 }
 
-
+##################################################
+#             Save graph part                    #
+##################################################
 Ncol <- ceiling(sqrt(ncol(df) - 1))
 all_graph <- ggarrange(plotlist = plots, ncol = Ncol, nrow = Ncol)
 
