@@ -554,6 +554,7 @@ void SEMproxy::run()
     if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
     {
       // call function to compute in-situ stats
+      generate_in_situ_stats(indexTimeSample);
       export_ppm_slice(indexTimeSample, 0);
       export_ppm_slice(indexTimeSample, 1);
       export_ppm_slice(indexTimeSample, 2);
