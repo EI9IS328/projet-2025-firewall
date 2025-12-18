@@ -205,6 +205,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Snapshot Slices: " << save_slices << std::endl;
   std::cout << "Snapshot interval is " << snap_time_interval_ << std::endl;
   std::cout << "Number of receivers is " << nbReceivers << std::endl;
+  std::cout << "In-situ enabled: " << is_insitu_ << std::endl;
   std::cout << "Ex=" << ex << " Ey=" << ey << " Ez=" << ez << std::endl;
 }
 
