@@ -34,7 +34,7 @@ for pb_size in $PROBLEM_SIZE; do
 done
 
 echo "ffconcat version 1.0" > concat.txt 
-for image in *.png; do
+for image in *.ppm; do
     echo "file ${image}" >> concat.txt
 done
 ffmpeg -f concat -safe 0 -r 1 -i concat.txt animation.mp4
