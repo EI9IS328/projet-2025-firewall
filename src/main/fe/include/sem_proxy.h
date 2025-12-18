@@ -95,6 +95,8 @@ class SEMproxy
   int snap_time_interval_;
   std::string snap_folder_;
   bool save_slices;
+  bool is_compressed_;
+  int compression_level_;
 
   std::string sismos_folder_;
   bool is_sismos_;
