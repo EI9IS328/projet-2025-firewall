@@ -237,7 +237,7 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
     float x = m_mesh->nodeCoord(n, 0);
     float y = m_mesh->nodeCoord(n, 1);
     float z = m_mesh->nodeCoord(n, 2);
-    float p = pnGlobal(n, i1);
+    float p = pnGlobal(n, i2);
     outfile << x << " " << y << " " << z << " " << p << "\n";
   }
 
@@ -269,8 +269,8 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
     return;
   }
 
-  float min = pnGlobal(0, i1);
-  float max = pnGlobal(0, i1);
+  float min = pnGlobal(0, i2);
+  float max = pnGlobal(0, i2);
   float mean = 0;
   float var = 0;
   int nbBars = 10;
@@ -278,25 +278,34 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
 
   for (int n = 0; n < numNodes; ++n)
   {
-    float p = pnGlobal(n, i1);
+    float p = pnGlobal(n, i2);
     if (p < min) min = p;
     if (p > max) max = p;
     mean += p;
   }
+  mean = mean / numNodes;
   int index;
   float barWidth = (max - min) / nbBars;
+  if (std::abs(max - min) < 1e-9) barWidth = 1.0f;  // Prevent div by zero
+
   for (int n = 0; n < numNodes; ++n)
   {
-    float p = pnGlobal(n, i1);
+    float p = pnGlobal(n, i2);
     var += (p - mean) * (p - mean);
-    index = (p - min) / barWidth;
+    if (std::abs(max - min) < 1e-9)
+      index = nbBars / 2;
+    else
+    {
+      index = (p - min) / barWidth;
+      if (index >= nbBars) index = nbBars - 1;
+    }
     histogram[index] += 1;
   }
   var = var / numNodes;
   double standardDeviation = sqrt(var);
   outfile << "min " << min << "\n";
   outfile << "max " << max << "\n";
-  outfile << "mean " << mean / numNodes << "\n";
+  outfile << "mean " << mean << "\n";
   outfile << "std " << standardDeviation << "\n";
   outfile << "Histogram of the pressure distribution\n";
   float bar = min;
@@ -305,6 +314,18 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
     outfile << "bar" << i << " of range " << bar << " to " << bar + barWidth
             << " " << histogram[i] << "\n";
     bar += barWidth;
+  }
+
+  if (is_sismos_)
+  {
+    outfile << "\nPressure at receivers\n";
+    outfile << "RecvCoords Pressure\n";
+    for (int indexRcv = 0; indexRcv < nbReceivers; indexRcv++)
+    {
+      outfile << "" << rcvCoords(indexRcv, 0) << "," << rcvCoords(indexRcv, 1)
+              << "," << rcvCoords(indexRcv, 2) << " "
+              << pnAtReceiver(indexRcv, indexTimeSample) << "\n";
+    }
   }
 
   outfile.close();
@@ -364,7 +385,7 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
     float z = m_mesh->nodeCoord(n, 2);
     if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
     {
-      float p = pnGlobal(n, i1);
+      float p = pnGlobal(n, i2);
       outfile << x << " " << y << " " << z << " " << p << "\n";
     }
   }
@@ -410,6 +431,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
       std::cout << "Failed to create directory.\n";
     }
   }
+
   filename << snap_folder_ << "/heatmap_" << name << "_" << indexTimeSample
            << ".ppm";
   int numNodes = m_mesh->getNumberOfNodes();
@@ -420,7 +442,6 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
     std::cerr << "Error: Could not open file " << filename.str() << std::endl;
     return;
   }
-
   int width = nb_elements_[firstDim] * m_mesh->getOrder();
   int height = nb_elements_[secondDim] * m_mesh->getOrder();
 
@@ -446,7 +467,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
   {
     if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
     {
-      float p = pnGlobal(n, i1);
+      float p = pnGlobal(n, i2);
       all_pressures.push_back(p);
       if (first)
       {
@@ -476,7 +497,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
 
       if (i >= 0 && i < width && j >= 0 && j < height)
       {
-        float p = pnGlobal(n, i1);
+        float p = pnGlobal(n, i2);
         float normalized_p = p / abs_max;
         slice_pixels[j][i].r =
             (normalized_p > 0.0f) ? static_cast<int>(255 * normalized_p) : 0;
@@ -494,6 +515,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
               << slice_pixels[j][i].b << "\n";
     }
   }
+  std::cout << "Saved heatmap to: " << filename.str() << std::endl;
   outfile.close();
 }
 
@@ -509,7 +531,7 @@ void SEMproxy::run()
   std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 
   ofstream my_file;
-  if (is_sismos_)
+  if (is_sismos_ && !is_insitu_)
   {
     std::stringstream filename;
     std::filesystem::path dir = sismos_folder_;
@@ -551,14 +573,6 @@ void SEMproxy::run()
     {
       generate_snapshot(indexTimeSample);
     }
-    if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
-    {
-      // call function to compute in-situ stats
-      generate_in_situ_stats(indexTimeSample);
-      export_ppm_slice(indexTimeSample, 0);
-      export_ppm_slice(indexTimeSample, 1);
-      export_ppm_slice(indexTimeSample, 2);
-    }
     if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
     {
       if (save_slices)
@@ -575,9 +589,9 @@ void SEMproxy::run()
 
     // Save pressure at receiver
     const int order = m_mesh->getOrder();
-    if (is_sismos_)
+    if (is_sismos_ && !is_insitu_)
     {
-      my_file << "t" << indexTimeSample << " ";
+      my_file << indexTimeSample << " ";
     }
     for (int indexRcv = 0; indexRcv < nbReceivers; indexRcv++)
     {
@@ -601,26 +615,34 @@ void SEMproxy::run()
       }
 
       pnAtReceiver(indexRcv, indexTimeSample) = varnp1;
-      if (is_sismos_)
+      if (is_sismos_ && !is_insitu_)
       {
         my_file << "" << varnp1 << " ";
       }
       // cout << "" <<varnp1<<" ";
     }
     swap(i1, i2);
+    if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
+    {
+      // call function to compute in-situ stats
+      generate_in_situ_stats(indexTimeSample);
+      export_ppm_slice(indexTimeSample, 0);
+      export_ppm_slice(indexTimeSample, 1);
+      export_ppm_slice(indexTimeSample, 2);
+    }
 
     auto tmp = solverData.m_i1;
     solverData.m_i1 = solverData.m_i2;
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
-    if (is_sismos_)
+    if (is_sismos_ && !is_insitu_)
     {
       my_file << "\n";
     }
     // cout << "\n";
   }
-  if (is_sismos_)
+  if (is_sismos_ && !is_insitu_)
   {
     my_file.close();
   }
