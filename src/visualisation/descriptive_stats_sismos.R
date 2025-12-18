@@ -35,9 +35,45 @@ graph <- ggplot(long_df, aes(x = receiver, y = pressure)) +
     y = "Pression"
   )
 
+
 ##################################################
 #             Save graph part                    #
 ##################################################
 dir.create("graph", showWarnings = FALSE)
 ggsave("graph/graph_descriptive_stats_sismos.png",
        graph, width = 10, height = 8, dpi = 300, bg = "white")
+
+
+##################################################
+#             Save mean medianne                 #
+##################################################
+
+receivers <- colnames(df)[2:ncol(df)]
+
+mean_vals   <- numeric(length(receivers))
+median_vals <- numeric(length(receivers))
+min_vals    <- numeric(length(receivers))
+max_vals    <- numeric(length(receivers))
+sd_vals     <- numeric(length(receivers))
+
+for (i in seq_along(receivers)) {
+  x <- df[[receivers[i]]]
+  
+  mean_vals[i]   <- mean(x, na.rm = TRUE)
+  median_vals[i] <- median(x, na.rm = TRUE)
+  min_vals[i]    <- min(x, na.rm = TRUE)
+  max_vals[i]    <- max(x, na.rm = TRUE)
+  sd_vals[i]     <- sd(x, na.rm = TRUE)
+}
+
+stats_df <- rbind(
+  mean   = mean_vals,
+  median = median_vals,
+  min    = min_vals,
+  max    = max_vals,
+  sd     = sd_vals
+)
+
+colnames(stats_df) <- receivers
+
+write.table(stats_df, file = "stats_sismos_basic.txt", sep = " ", row.names = TRUE, col.names = NA, quote = FALSE)
