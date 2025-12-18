@@ -283,6 +283,7 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
     if (p > max) max = p;
     mean += p;
   }
+  mean = mean / numNodes;
   int index;
   float barWidth = (max - min) / nbBars;
   if (std::abs(max - min) < 1e-9) barWidth = 1.0f; // Prevent div by zero
@@ -304,7 +305,7 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   double standardDeviation = sqrt(var);
   outfile << "min " << min << "\n";
   outfile << "max " << max << "\n";
-  outfile << "mean " << mean / numNodes << "\n";
+  outfile << "mean " << mean << "\n";
   outfile << "std " << standardDeviation << "\n";
   outfile << "Histogram of the pressure distribution\n";
   float bar = min;
