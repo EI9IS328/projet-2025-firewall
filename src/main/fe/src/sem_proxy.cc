@@ -548,10 +548,6 @@ void SEMproxy::run()
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
     }
-    if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
-    {
-      generate_snapshot(indexTimeSample);
-    }
     if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
     {
       // call function to compute in-situ stats
