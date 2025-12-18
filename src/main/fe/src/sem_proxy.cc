@@ -237,7 +237,7 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
     float x = m_mesh->nodeCoord(n, 0);
     float y = m_mesh->nodeCoord(n, 1);
     float z = m_mesh->nodeCoord(n, 2);
-    float p = pnGlobal(n, i1);
+    float p = pnGlobal(n, i2);
     outfile << x << " " << y << " " << z << " " << p << "\n";
   }
 
@@ -269,8 +269,8 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
     return;
   }
 
-  float min = pnGlobal(0, i1);
-  float max = pnGlobal(0, i1);
+  float min = pnGlobal(0, i2);
+  float max = pnGlobal(0, i2);
   float mean = 0;
   float var = 0;
   int nbBars = 10;
@@ -278,19 +278,26 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
 
   for (int n = 0; n < numNodes; ++n)
   {
-    float p = pnGlobal(n, i1);
+    float p = pnGlobal(n, i2);
     if (p < min) min = p;
     if (p > max) max = p;
     mean += p;
   }
   int index;
   float barWidth = (max - min) / nbBars;
+  if (std::abs(max - min) < 1e-9) barWidth = 1.0f; // Prevent div by zero
+
   for (int n = 0; n < numNodes; ++n)
   {
-    float p = pnGlobal(n, i1);
+    float p = pnGlobal(n, i2);
     var += (p - mean) * (p - mean);
-    index = (p - min) / barWidth;
-    if (index >= nbBars) index = nbBars - 1;
+    if (std::abs(max - min) < 1e-9)
+      index = nbBars / 2;
+    else
+    {
+      index = (p - min) / barWidth;
+      if (index >= nbBars) index = nbBars - 1;
+    }
     histogram[index] += 1;
   }
   var = var / numNodes;
@@ -365,7 +372,7 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
     float z = m_mesh->nodeCoord(n, 2);
     if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
     {
-      float p = pnGlobal(n, i1);
+      float p = pnGlobal(n, i2);
       outfile << x << " " << y << " " << z << " " << p << "\n";
     }
   }
@@ -447,7 +454,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
   {
     if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
     {
-      float p = pnGlobal(n, i1);
+      float p = pnGlobal(n, i2);
       all_pressures.push_back(p);
       if (first)
       {
@@ -477,7 +484,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
 
       if (i >= 0 && i < width && j >= 0 && j < height)
       {
-        float p = pnGlobal(n, i1);
+        float p = pnGlobal(n, i2);
         float normalized_p = p / abs_max;
         slice_pixels[j][i].r =
             (normalized_p > 0.0f) ? static_cast<int>(255 * normalized_p) : 0;
