@@ -24,11 +24,11 @@ df <- read.table(file, header = TRUE)
 if (ncol(df) < 2) {
   stop("No receiver columns found")
 }
-pression <- as.numeric(unlist(df[ , -1]))
+pression <- as.numeric(unlist(df$pressure))
 dataframe <- data.frame(pres = pression)
 
 graph <- ggplot(dataframe, aes(x = pres)) +
-  geom_histogram(fill = "darkorchid4", color = "darkgray", bins = 30) +
+  geom_histogram(fill = "darkorchid4", color = "darkgray", bins = 10) +
   scale_x_continuous(name = "Pressure") +
   ylab("Count") +
   theme_minimal()
