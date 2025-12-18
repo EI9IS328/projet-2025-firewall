@@ -52,3 +52,19 @@ ggplot(df, aes(x = Receivers, y = Total.Time)) +
 
 ggsave(paste(input_file, "_receivers.png", sep = ""), width = 8, height = 6)
 
+ggplot(df, aes(x = Nodes, y = Total.Time, color = Snapshot.Interval)) +
+  geom_line(aes(group = Snapshot.Interval)) +
+  geom_point(size= 2) +
+  #scale_color_manual(values = c("#D991BA","#58508D", "#7b2d8fff")) +
+  scale_y_log10() +
+  theme(
+    legend.position = c(0.05, 0.95),
+    legend.justification = c("left", "top"),
+    legend.background = element_rect(fill = "white", color = NA),
+    plot.title = element_text(face = "bold"),
+  ) +
+  guides(color = guide_legend(title = "Snapshot interval")) +
+  xlab("Nodes") +
+  ylab("Total Time (s)")
+
+ggsave(paste(input_file, "_snapshot_interval.png", sep = ""), width = 8, height = 6)
