@@ -13,9 +13,13 @@ patterns = r"""
 [\s\S]*?
 ^Snapshot\ enabled:\s*(?P<snapshot_enabled>.*)$
 [\s\S]*?
+^Snapshot\ Slices:\s*(?P<snapshot_slices>.*)$
+[\s\S]*?
 ^Snapshot\ interval\ is\s*(?P<snapshot_interval>.*)$
 [\s\S]*?
 ^Number\ of\ receivers\ is\s*(?P<receivers>.*)$
+[\s\S]*?
+^In-situ\ enabled:\s*(?P<in_situ_enabled>.*)$
 [\s\S]*?
 ^Ex=(?P<Ex>\d+)\ Ey=(?P<Ey>\d+)\ Ez=(?P<Ez>\d+)$
 [\s\S]*?
@@ -26,7 +30,7 @@ patterns = r"""
 ^Elapsed\ TotalExe\ Time\ :\ (?P<TotalTime>[\d\.]+)\ seconds.$
 """
 
-header = "Nodes,Elements,Timestep,Simulated Time,Snapshot Enabled,Snapshot Interval,Receivers,Ex,Ey,Ez,Initial Time,Compute Time,Total Time\n"
+header = "Nodes,Elements,Timestep, In-situ, Simulated Time,Snapshot Enabled,Snapshot Interval,Snapshot Slices,Receivers,Ex,Ey,Ez,Initial Time,Compute Time,Total Time\n"
 parsed_data = []
 
 if len(sys.argv) != 2:
@@ -50,9 +54,11 @@ for filename in os.listdir(dir_path):
                     parsed_data.append([extracted_data['nodes'], 
                                 extracted_data['elements'],
                                 extracted_data['timestep'],
+                                extracted_data['in_situ_enabled'],
                                 extracted_data['sim_time'],
                                 extracted_data['snapshot_enabled'],
                                 extracted_data['snapshot_interval'],
+                                extracted_data['snapshot_slices'],
                                 extracted_data['receivers'],
                                 extracted_data['Ex'],
                                 extracted_data['Ey'],

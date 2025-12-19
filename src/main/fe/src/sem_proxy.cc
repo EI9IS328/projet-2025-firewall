@@ -202,8 +202,10 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Time step is " << dt_ << "s" << std::endl;
   std::cout << "Simulated time is " << timemax_ << "s" << std::endl;
   std::cout << "Snapshot enabled: " << is_snapshots_ << std::endl;
+  std::cout << "Snapshot Slices: " << save_slices << std::endl;
   std::cout << "Snapshot interval is " << snap_time_interval_ << std::endl;
   std::cout << "Number of receivers is " << nbReceivers << std::endl;
+  std::cout << "In-situ enabled: " << is_insitu_ << std::endl;
   std::cout << "Ex=" << ex << " Ey=" << ey << " Ez=" << ez << std::endl;
 }
 
@@ -367,7 +369,7 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
 
   int numNodes = m_mesh->getNumberOfNodes();
   float spacing1 = m_mesh->getMinSpacing();
-  float slice_coord = domain_size_[2] / 2.0f;
+  float slice_coord = domain_size_[dim] / 2.0f;
 
   std::ofstream outfile(filename.str());
   if (!outfile)
@@ -568,10 +570,6 @@ void SEMproxy::run()
     {
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
-    }
-    if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
-    {
-      generate_snapshot(indexTimeSample);
     }
     if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
     {
