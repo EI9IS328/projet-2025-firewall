@@ -100,6 +100,11 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   is_snapshots_ = opt.enableSnapshots;
   snap_time_interval_ = opt.intervalSnapshots;
   save_slices = opt.saveSlices;
+  is_compressed_ = opt.enableCompression;
+  compression_level_ = opt.compressionLevel;
+  if(compression_level_ != 32 && compression_level_ != 16 && compression_level_ != 8){
+    throw std::runtime_error("Compression level must be 32 or 16 (float in single or half precision) or 8 (int on 8bits)");
+  }
 
   is_sismos_ = opt.enableSismos;
   snap_folder_ = opt.folderSnapshots;
@@ -229,6 +234,18 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
     std::cerr << "Error: Could not open file " << filename.str() << std::endl;
     return;
   }
+
+  if(is_compressed_){
+    double min = pnGlobal(0, i1);
+    double max =pnGlobal(0, i1);
+    for (int n = 0; n < numNodes; ++n)
+  {
+    float p = pnGlobal(n, i1);
+    if(p < min) min = p;
+    if(p > max) max = p;
+  }
+  }
+  
 
   outfile << "x y z pressure\n";
 
