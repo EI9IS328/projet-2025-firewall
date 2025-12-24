@@ -1,0 +1,50 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{placeins}
+
+
+
+\title{Rapport Traitement des données in-situ \break Équipe Firewall}
+\author{Valentin Jonquière, Mathilde Chollon, Calliste Boudoux d'Hautefeuille}
+
+\begin{document}
+
+\maketitle
+\pagebreak
+
+\tableofcontents
+
+\pagebreak
+
+\section{Organisation du travail}
+Nous travaillons sur le projet grâce à GitHub. Lors de chaque TD, nous créons des issues, que nous nous répartissons dans le Kanban.
+Chaque membre du groupe possède un bout du TD à réaliser et aide les autres s'il finit en avance. Nous avons des branches pour chaque
+ fonctionnalité et nous utilisons les merge requests afin de vérifier le travail des autres membres. Cela nous permet d'avoir du code
+ fonctionnel dans la branche principale et de vraiment savoir ce que modifie chaque personne.
+
+
+\section{Workflow ad-hoc}
+
+\subsection{Snaphots}
+
+\subsection{Sismos}
+Au départ, nous ne possédions les données de sismos que d'un seul récepteur. De plus, ces données étaient "perdues", 
+elles n'étaient pas sauvegardées, il était donc impossible de faire des traitements dessus.
+Nous avons donc rajouté des fonctionnalités dans l'application afin de pouvoir gérer plusieurs récepteurs et sauvegarder les données dans un fichier.
+Les options \textit{sismos} \textit{set-receivers} et \textit{sismos-folder} nous permettent respectivement d'activer la sauvegarde des sismos,
+de choisir un fichier contentant les récepteurs à monitorer et le dossier de sauvegarde du fichier.
+Lorsque l'on active l'option sismos, nous obtenons donc un fichier contenant sur chaque ligne le temps et la mesure de pression au récepteur.
+
+Ce fichier peut ensuite être utilisé à des fins de visualisation, pour produire des courbes représentant la variabilité des pressions aux récepteurs données au cours du temps.
+
+\section{Workflow in-situ}
+
+\section{Comparaison workflows ad-hoc et in-situ}
+
+\end{document}
