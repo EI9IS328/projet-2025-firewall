@@ -216,7 +216,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Ex=" << ex << " Ey=" << ey << " Ez=" << ez << std::endl;
 }
 
-void SEMproxy::generate_snapshot(int indexTimeSample)
+void SEMproxy::generate_snapshot(int indexTimeSample,std::ofstream& compression_file)
 {
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
@@ -251,14 +251,11 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
       if (p > vmax) vmax = p;
     }
     delta = (vmax - vmin) / (pow(2, 16) - 1);
-    // outfile << "vmin " << vmin << " vmax " << vmax << " delta " << delta
-    //<< " precision " << 16 << "\n";
-    outfile << "x y z pressure compressedPressure recomputedPressure error\n";
+    compression_file <<"" << vmin << " " << vmax << " " << delta
+    << " " << 16 << "\n";
   }
-  else
-  {
-    outfile << "x y z pressure\n";
-  }
+
+  outfile << "x y z pressure\n";
 
   for (int n = 0; n < numNodes; ++n)
   {
@@ -269,10 +266,9 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
     if (is_compressed_)
     {
       short pComp = short((p - vmin) / delta);
-      float reconstructedP = (pComp * delta) + vmin;
-      float error = p - reconstructedP;
-      outfile << x << " " << y << " " << z << " " << p << " " << pComp << " "
-              << reconstructedP << " " << error << "\n";
+      //float reconstructedP = (pComp * delta) + vmin;
+      //float error = p - reconstructedP;
+      outfile << x << " " << y << " " << z <<  " " << pComp << "\n";
     }
     else
     {
@@ -547,6 +543,24 @@ void SEMproxy::run()
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
   std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 
+  std::ofstream compression_file;
+  if(is_compressed_){
+    std::stringstream filename;
+    std::filesystem::path dir = snap_folder_;
+
+    if (!std::filesystem::exists(dir))
+    {
+      if (!std::filesystem::create_directory(dir))
+      {
+        std::cout << "Failed to create directory.\n";
+      }
+    }
+    filename << snap_folder_ << "/info.compression";
+
+    compression_file.open(filename.str());
+    compression_file << "vmin " << "vmax " << "delta " << "precision" << "\n";
+  }
+
   ofstream my_file;
   if (is_sismos_)
   {
@@ -604,7 +618,7 @@ void SEMproxy::run()
       }
       else
       {
-        generate_snapshot(indexTimeSample);
+        generate_snapshot(indexTimeSample,compression_file);
       }
     }
 
@@ -658,6 +672,9 @@ void SEMproxy::run()
   if (is_sismos_)
   {
     my_file.close();
+  }
+  if(is_compressed_){
+    compression_file.close();
   }
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)

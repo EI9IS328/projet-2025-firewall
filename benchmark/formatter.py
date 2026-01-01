@@ -37,7 +37,7 @@ dir_path = sys.argv[1]
 for filename in os.listdir(dir_path):
         full_path = os.path.join(dir_path, filename)
 
-        if os.path.isfile(full_path) and (not full_path.endswith(".snapshot")) and (not full_path.endswith(".sismos")):
+        if os.path.isfile(full_path) and (not full_path.endswith(".snapshot")) and (not full_path.endswith(".sismos") and (not full_path.endswith(".compression"))):
             try:
                 with open(full_path, 'r') as f:
                     data = f.read()

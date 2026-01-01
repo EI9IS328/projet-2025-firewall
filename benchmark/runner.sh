@@ -5,6 +5,7 @@ SNAPSHOT_FREQUENCY=50
 MAX_TIME=1.2
 RECEIVERS_FILES="1"
 FOLDER="/tmp/$(date '+%Y-%m-%d-%H:%M:%S')"
+COMPRESSION_FILE="info.compression"
 
 current_dir=$(pwd)
 if [[ $current_dir == *benchmark ]]; then
@@ -28,7 +29,7 @@ for pb_size in $PROBLEM_SIZE; do
         if [[ "$ENABLE_SNAPSHOTS" == false ]] ; then
             "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_no_snapshots_${pb_size}"
         else
-            "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}"  > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+            "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" --enable-compression > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
         fi
     done
 done
@@ -39,8 +40,10 @@ python3 formatter.py "${FOLDER}"
 cd "$FOLDER"
 
 echo "Generating plots..."
+current_snap=0
 for snapshot in *.snapshot; do
-    Rscript /net/cremi/mchollon/espaces/travail/projet-2025-firewall/benchmark/pressure_map.R $snapshot
+current_snap=$((current_snap + 1))
+    Rscript /net/cremi/mchollon/espaces/travail/projet-2025-firewall/benchmark/pressure_map.R $snapshot ${COMPRESSION_FILE} ${current_snap}
 done
 
 Rscript /net/cremi/mchollon/espaces/travail/projet-2025-firewall/benchmark/version_cmp.R output

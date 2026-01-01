@@ -145,7 +145,7 @@ class SEMproxy
   SolverFactory::meshType getMesh(string meshArg);
 
   // snapshot
-  void generate_snapshot(int indexTimeSample);
+  void generate_snapshot(int indexTimeSample, std::ofstream& compression_file);
 
   void generate_in_situ_stats(int indexTimeSample);
   void export_ppm_slice(int indexTimeSample, int dim);
