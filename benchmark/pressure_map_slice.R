@@ -15,7 +15,7 @@ xz <- read.table(input_file_xz, header = T, dec =" ")
 yz <- read.table(input_file_yz, header = T, dec =" ")
 
 color_palette <- colorRampPalette(c("blue", "yellow", "red"))
-num <- as.numeric(xy$pressure)
+num <- as.numeric(xy$recomputedPressure)
 colors <- color_palette(500)[as.numeric(cut(num, breaks = 500))]
 #plot(df$x, df$y, col = colors, pch=19)
 

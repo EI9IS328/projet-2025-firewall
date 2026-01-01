@@ -102,8 +102,12 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   save_slices = opt.saveSlices;
   is_compressed_ = opt.enableCompression;
   compression_level_ = opt.compressionLevel;
-  if(compression_level_ != 32 && compression_level_ != 16 && compression_level_ != 8){
-    throw std::runtime_error("Compression level must be 32 or 16 (float in single or half precision) or 8 (int on 8bits)");
+  if (compression_level_ != 32 && compression_level_ != 16 &&
+      compression_level_ != 8)
+  {
+    throw std::runtime_error(
+        "Compression level must be 32 or 16 (float in single or half "
+        "precision) or 8 (int on 8bits)");
   }
 
   is_sismos_ = opt.enableSismos;
@@ -235,19 +239,26 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
     return;
   }
 
-  if(is_compressed_){
-    double min = pnGlobal(0, i1);
-    double max =pnGlobal(0, i1);
-    for (int n = 0; n < numNodes; ++n)
+  float delta, vmin, vmax;
+  if (is_compressed_)
   {
-    float p = pnGlobal(n, i1);
-    if(p < min) min = p;
-    if(p > max) max = p;
+    vmin = pnGlobal(0, i1);
+    vmax = pnGlobal(0, i1);
+    for (int n = 0; n < numNodes; ++n)
+    {
+      float p = pnGlobal(n, i1);
+      if (p < vmin) vmin = p;
+      if (p > vmax) vmax = p;
+    }
+    delta = (vmax - vmin) / (pow(2, 16) - 1);
+    // outfile << "vmin " << vmin << " vmax " << vmax << " delta " << delta
+    //<< " precision " << 16 << "\n";
+    outfile << "x y z pressure compressedPressure recomputedPressure error\n";
   }
+  else
+  {
+    outfile << "x y z pressure\n";
   }
-  
-
-  outfile << "x y z pressure\n";
 
   for (int n = 0; n < numNodes; ++n)
   {
@@ -255,7 +266,18 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
     float y = m_mesh->nodeCoord(n, 1);
     float z = m_mesh->nodeCoord(n, 2);
     float p = pnGlobal(n, i1);
-    outfile << x << " " << y << " " << z << " " << p << "\n";
+    if (is_compressed_)
+    {
+      short pComp = short((p - vmin) / delta);
+      float reconstructedP = (pComp * delta) + vmin;
+      float error = p - reconstructedP;
+      outfile << x << " " << y << " " << z << " " << p << " " << pComp << " "
+              << reconstructedP << " " << error << "\n";
+    }
+    else
+    {
+      outfile << x << " " << y << " " << z << " " << p << "\n";
+    }
   }
 
   outfile.close();
@@ -563,10 +585,6 @@ void SEMproxy::run()
     {
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
-    }
-    if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
-    {
-      generate_snapshot(indexTimeSample);
     }
     if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
     {
