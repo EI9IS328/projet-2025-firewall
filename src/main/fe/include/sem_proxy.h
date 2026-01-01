@@ -35,7 +35,7 @@ class SEMproxy
   /**
    * @brief Destructor of the SEMproxy class
    */
-  ~SEMproxy(){};
+  ~SEMproxy() {};
 
   /**
    * @brief Initialize the simulation.
@@ -116,6 +116,17 @@ class SEMproxy
   int myElementSource = 0;
   int nbReceivers = 1;
 
+  // time counters
+  double snapshotTime = 0.0;
+  double sliceTime = 0.0;
+  double inSituTime = 0.0;
+
+  // snapshot size analysis
+  int totalSnapshotSize = 0;
+  int snapshotCount = 0;
+  int minSnapshotSize = INT_MAX;
+  int maxSnapshotSize = INT_MIN;
+
   std::shared_ptr<model::ModelApi<float, int>> m_mesh;
   std::unique_ptr<SEMSolverBase> m_solver;
   SolverUtils myUtils;
@@ -143,11 +154,11 @@ class SEMproxy
   SolverFactory::meshType getMesh(string meshArg);
 
   // snapshot
-  void generate_snapshot(int indexTimeSample);
+  int generate_snapshot(int indexTimeSample);
 
   void generate_in_situ_stats(int indexTimeSample);
   void export_ppm_slice(int indexTimeSample, int dim);
-  void generate_snapshot_slice(int indexTimeSample, int dim);
+  int generate_snapshot_slice(int indexTimeSample, int dim);
 };
 
 #endif /* SEMPROXY_HPP_ */
