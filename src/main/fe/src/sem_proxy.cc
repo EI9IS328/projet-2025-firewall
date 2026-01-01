@@ -19,6 +19,7 @@
 #include <sstream>
 #include <variant>
 #include <vector>
+#include <filesystem>
 
 using namespace SourceAndReceiverUtils;
 
@@ -209,7 +210,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Ex=" << ex << " Ey=" << ey << " Ez=" << ez << std::endl;
 }
 
-void SEMproxy::generate_snapshot(int indexTimeSample)
+int SEMproxy::generate_snapshot(int indexTimeSample)
 {
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
@@ -229,7 +230,7 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
   if (!outfile)
   {
     std::cerr << "Error: Could not open file " << filename.str() << std::endl;
-    return;
+    return -1;
   }
 
   outfile << "x y z pressure\n";
@@ -246,6 +247,7 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
   outfile.close();
 
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
+  return std::filesystem::file_size(filename.str());
 }
 
 void SEMproxy::generate_in_situ_stats(int indexTimeSample)
@@ -335,7 +337,7 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   std::cout << "Saved in situ analysis to: " << filename.str() << std::endl;
 }
 
-void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
+int SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
 {
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
@@ -375,7 +377,7 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
   if (!outfile)
   {
     std::cerr << "Error: Could not open file " << filename.str() << std::endl;
-    return;
+    return -1;
   }
 
   outfile << "x y z pressure\n";
@@ -395,6 +397,7 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
   outfile.close();
 
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
+  return std::filesystem::file_size(filename.str());
 }
 
 void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
@@ -573,16 +576,29 @@ void SEMproxy::run()
     }
     if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
     {
+      int snapshotSize = 0;
       if (save_slices)
       {
-        generate_snapshot_slice(indexTimeSample, 0);
-        generate_snapshot_slice(indexTimeSample, 1);
-        generate_snapshot_slice(indexTimeSample, 2);
+        time_point<system_clock> start = system_clock::now();
+        snapshotSize += (generate_snapshot_slice(indexTimeSample, 0)/1000000);
+        snapshotSize += (generate_snapshot_slice(indexTimeSample, 1)/1000000);
+        snapshotSize += (generate_snapshot_slice(indexTimeSample, 2)/1000000);
+        sliceTime += (system_clock::now() - start).count();
       }
       else
       {
-        generate_snapshot(indexTimeSample);
+        time_point<system_clock> start = system_clock::now();
+        snapshotSize = (generate_snapshot(indexTimeSample)/1000000);
+        snapshotTime += (system_clock::now() - start).count();
       }
+      if (snapshotSize < minSnapshotSize){
+        minSnapshotSize = snapshotSize;
+      }
+      if (snapshotSize > maxSnapshotSize){
+        maxSnapshotSize = snapshotSize;
+      }
+      snapshotCount ++;
+      totalSnapshotSize += snapshotSize;
     }
 
     // Save pressure at receiver
@@ -623,10 +639,12 @@ void SEMproxy::run()
     if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
     {
       // call function to compute in-situ stats
+      time_point<system_clock> start = system_clock::now();
       generate_in_situ_stats(indexTimeSample);
       export_ppm_slice(indexTimeSample, 0);
       export_ppm_slice(indexTimeSample, 1);
       export_ppm_slice(indexTimeSample, 2);
+      inSituTime += (system_clock::now() - start).count();
     }
 
     auto tmp = solverData.m_i1;
@@ -656,6 +674,12 @@ void SEMproxy::run()
        << endl;
   cout << "---- Elapsed Output Time : " << outputtime_ms / 1E6 << " seconds."
        << endl;
+  cout << "Snapshot Time: " << snapshotTime / 1E9 << " seconds." << endl;
+  cout << "Slice Time: " << sliceTime / 1E9 << " seconds." << endl;
+  cout << "In-situ Time: " << inSituTime / 1E9 << " seconds." << endl;
+  cout << "Min snapshot Size: " << minSnapshotSize << " Mo" << endl;
+  cout << "Max snapshot Size: " << maxSnapshotSize << " Mo" << endl;
+  cout << "Mean snapshot Size: " << totalSnapshotSize/snapshotCount << " Mo" << endl;
   cout << "------------------------------------------------ " << endl;
 }
 

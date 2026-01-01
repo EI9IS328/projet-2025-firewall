@@ -4,7 +4,7 @@ ENABLE_SNAPSHOTS=true
 SNAPSHOT_FREQUENCY=50
 MAX_TIME=0.2
 RECEIVERS_FILES="1"
-FOLDER=$(date '+%Y-%m-%d-%H:%M:%S')
+FOLDER="/tmp/$(date '+%Y-%m-%d-%H:%M:%S')"
 
 current_dir=$(pwd)
 if [[ $current_dir == *benchmark ]]; then
@@ -40,10 +40,10 @@ cd "$FOLDER"
 
 echo "Generating plots..."
 for snapshot in *.snapshot; do
-    Rscript ../pressure_map.R $snapshot
+    Rscript "$current_dir/pressure_map.R" $snapshot
 done
 
-Rscript ../version_cmp.R output
+Rscript "$current_dir/version_cmp.R" output
 
 echo "ffconcat version 1.0" > concat.txt 
 for image in *.png; do

@@ -5,7 +5,7 @@ SNAPSHOT_FREQUENCY="50"
 MAX_TIME=0.2
 RECEIVERS_FILES="1"
 COMPARE_WITH_SLICES="true"
-FOLDER=$(date '+%Y-%m-%d-%H:%M:%S')
+FOLDER="/tmp/$(date '+%Y-%m-%d-%H:%M:%S')"
 
 current_dir=$(pwd)
 if [[ $current_dir == *runners ]]; then
@@ -40,4 +40,4 @@ python3 formatter.py "${FOLDER}"
 
 cd "$FOLDER"
 
-Rscript ../version_cmp.R output
+Rscript "$current_dir/version_cmp.R" output

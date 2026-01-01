@@ -4,7 +4,7 @@ ENABLE_SNAPSHOTS=false
 SNAPSHOT_FREQUENCY=50
 MAX_TIME=2.0
 RECEIVERS_FILES="1"
-FOLDER=$(date '+%Y-%m-%d-%H:%M:%S')
+FOLDER="/tmp/$(date '+%Y-%m-%d-%H:%M:%S')"
 
 current_dir=$(pwd)
 if [[ $current_dir == *benchmark ]]; then

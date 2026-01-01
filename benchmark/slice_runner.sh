@@ -4,7 +4,7 @@ ENABLE_SNAPSHOTS=true
 SNAPSHOT_FREQUENCY=50
 MAX_TIME=0.2
 RECEIVERS_FILES="1"
-FOLDER=$(date '+%Y-%m-%d-%H:%M:%S')
+FOLDER="/tmp/$(date '+%Y-%m-%d-%H:%M:%S')"
 
 current_dir=$(pwd)
 if [[ $current_dir == *benchmark ]]; then
@@ -46,7 +46,7 @@ for file_xy in snapshot_xy_*.snapshot; do
 
     if [[ -f "$snapshot_xz" && -f "$snapshot_yz" ]]; then
         echo "Processing ID: $id | Files: $snapshot_xy, $snapshot_xz, $snapshot_yz"
-        Rscript ../pressure_map_slice.R "$snapshot_xy" "$snapshot_xz" "$snapshot_yz"
+        Rscript "$current_dir/pressure_map_slice.R" "$snapshot_xy" "$snapshot_xz" "$snapshot_yz"
     else
         echo "Warning: Missing matching files for ID $id"
     fi
