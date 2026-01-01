@@ -37,7 +37,6 @@ class SemProxyOptions
   int intervalInSitu = 50;
   std::string folderInSitu = "../in-situ";
   bool enableCompression = false;
-  int compressionLevel = 32;
 
   void validate() const
   {
@@ -113,8 +112,6 @@ class SemProxyOptions
         "slices", "Save slices snapshots (visualisation only)",
         cxxopts::value<bool>(o.saveSlices))(
         "enable-compression", "Enable compression for snapshots",
-        cxxopts::value<bool>(o.enableCompression))(
-        "compression-level", "Compression level for snapshots",
-        cxxopts::value<int>(o.compressionLevel));
+        cxxopts::value<bool>(o.enableCompression));
   }
 };

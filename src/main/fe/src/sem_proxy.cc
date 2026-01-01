@@ -101,14 +101,6 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   snap_time_interval_ = opt.intervalSnapshots;
   save_slices = opt.saveSlices;
   is_compressed_ = opt.enableCompression;
-  compression_level_ = opt.compressionLevel;
-  if (compression_level_ != 32 && compression_level_ != 16 &&
-      compression_level_ != 8)
-  {
-    throw std::runtime_error(
-        "Compression level must be 32 or 16 (float in single or half "
-        "precision) or 8 (int on 8bits)");
-  }
 
   is_sismos_ = opt.enableSismos;
   snap_folder_ = opt.folderSnapshots;
