@@ -10,12 +10,26 @@ input_file_xy <- args[1]
 input_file_xz <- args[2]
 input_file_yz <- args[3]
 
+if (length(args)>=4) {
+  compression_file <- args[4]
+  compressed <- TRUE
+  current_snap <- as.numeric(args[5])
+} else {
+  compressed <- FALSE
+}
+
 xy <- read.table(input_file_xy, header = T, dec =" ")
 xz <- read.table(input_file_xz, header = T, dec =" ")
 yz <- read.table(input_file_yz, header = T, dec =" ")
 
 color_palette <- colorRampPalette(c("blue", "yellow", "red"))
-num <- as.numeric(xy$recomputedPressure)
+num <- as.numeric(xy$pressure)
+if(compressed == TRUE){
+  comp_info <- read.table(compression_file, header = T, dec =" ")
+  vmin  <- as.numeric(comp_info$vmin[current_snap])
+  delta <- as.numeric(comp_info$delta[current_snap])
+  num <- vmin + (num * delta)
+}
 colors <- color_palette(500)[as.numeric(cut(num, breaks = 500))]
 #plot(df$x, df$y, col = colors, pch=19)
 
@@ -47,4 +61,4 @@ yz_plot <- ggplot(yz, aes(x = y, y = z, fill = num)) +
 #ggsave(paste(input_file, "y_z.png", sep = ""), width = 8, height = 6)
 
 res <- ggarrange(xy_plot, xz_plot, yz_plot, labels = c("XY Slice", "XZ Slice", "YZ Slice"),ncol = 2, nrow = 2)
-ggsave(paste(input_file, "_res.png", sep = ""), width = 8, height = 6)
+ggsave(paste(input_file_xy, "_res.png", sep = ""), width = 8, height = 6)

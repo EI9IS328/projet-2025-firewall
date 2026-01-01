@@ -347,7 +347,7 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   std::cout << "Saved in situ analysis to: " << filename.str() << std::endl;
 }
 
-void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
+void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim, std::ofstream& compression_file)
 {
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
@@ -383,6 +383,26 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
   float spacing1 = m_mesh->getMinSpacing();
   float slice_coord = domain_size_[2] / 2.0f;
 
+
+  float delta, vmin, vmax;
+  if (is_compressed_)
+  {
+    vmin = pnGlobal(0, i1);
+    vmax = pnGlobal(0, i1);
+    for (int n = 0; n < numNodes; ++n)
+    {
+      float p = pnGlobal(n, i1);
+      if (p < vmin) vmin = p;
+      if (p > vmax) vmax = p;
+    }
+    delta = (vmax - vmin) / (pow(2, 16) - 1);
+    if(dim==0){
+      compression_file <<"" << vmin << " " << vmax << " " << delta
+    << " " << 16 << "\n";
+    }
+    
+  }
+
   std::ofstream outfile(filename.str());
   if (!outfile)
   {
@@ -400,7 +420,15 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
     if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
     {
       float p = pnGlobal(n, i1);
-      outfile << x << " " << y << " " << z << " " << p << "\n";
+      if (is_compressed_)
+      {
+        short pComp = short((p - vmin) / delta);
+        outfile << x << " " << y << " " << z <<  " " << pComp << "\n";
+      }
+      else
+      {
+        outfile << x << " " << y << " " << z << " " << p << "\n";
+      }
     }
   }
 
@@ -612,9 +640,9 @@ void SEMproxy::run()
     {
       if (save_slices)
       {
-        generate_snapshot_slice(indexTimeSample, 0);
-        generate_snapshot_slice(indexTimeSample, 1);
-        generate_snapshot_slice(indexTimeSample, 2);
+        generate_snapshot_slice(indexTimeSample, 0, compression_file);
+        generate_snapshot_slice(indexTimeSample, 1, compression_file);
+        generate_snapshot_slice(indexTimeSample, 2, compression_file);
       }
       else
       {

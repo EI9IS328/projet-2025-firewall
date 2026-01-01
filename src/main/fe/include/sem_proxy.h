@@ -149,7 +149,7 @@ class SEMproxy
 
   void generate_in_situ_stats(int indexTimeSample);
   void export_ppm_slice(int indexTimeSample, int dim);
-  void generate_snapshot_slice(int indexTimeSample, int dim);
+  void generate_snapshot_slice(int indexTimeSample, int dim, std::ofstream& compression_file);
 };
 
 #endif /* SEMPROXY_HPP_ */

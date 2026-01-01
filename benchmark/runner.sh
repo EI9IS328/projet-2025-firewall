@@ -1,6 +1,7 @@
 EXECUTABLE_PATH="../build/bin/semproxy"
 PROBLEM_SIZE="50"
 ENABLE_SNAPSHOTS=true
+ENABLE_COMPRESSION=false
 SNAPSHOT_FREQUENCY=50
 MAX_TIME=1.2
 RECEIVERS_FILES="1"
@@ -42,8 +43,12 @@ cd "$FOLDER"
 echo "Generating plots..."
 current_snap=0
 for snapshot in *.snapshot; do
-current_snap=$((current_snap + 1))
-    Rscript /net/cremi/mchollon/espaces/travail/projet-2025-firewall/benchmark/pressure_map.R $snapshot ${COMPRESSION_FILE} ${current_snap}
+    current_snap=$((current_snap + 1))
+    if [[ "$ENABLE_COMPRESSION" == false ]] ; then
+        Rscript /net/cremi/mchollon/espaces/travail/projet-2025-firewall/benchmark/pressure_map.R $snapshot
+    else
+        Rscript /net/cremi/mchollon/espaces/travail/projet-2025-firewall/benchmark/pressure_map.R $snapshot ${COMPRESSION_FILE} ${current_snap}
+    fi
 done
 
 Rscript /net/cremi/mchollon/espaces/travail/projet-2025-firewall/benchmark/version_cmp.R output
