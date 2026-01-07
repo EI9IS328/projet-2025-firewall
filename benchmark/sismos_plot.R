@@ -26,7 +26,7 @@ plots <- list()
 
 for(receiver in 2:ncol(df)){
   colname <- colnames(df)[receiver]
-  plots[[receiver - 1]] <- ggplot(df) + geom_line(aes(x = Time, y = .data[[colname]])) + labs(y = colname)
+  plots[[receiver - 1]] <- ggplot(df) + geom_line(aes(x = Time, y = .data[[colname]])) + labs(y = colname, title = "Pressure per time")
 }
 
 Ncol <- ceiling(sqrt(ncol(df) - 1))
@@ -50,7 +50,7 @@ long_df <- data.frame(
 graph <- ggplot(long_df, aes(x = receiver, y = pressure)) +
   geom_boxplot(outlier.alpha = 0.3) +
   labs(
-    title = "Statistiques descriptives des sismos",
+    title = "Descriptive statistics of the sismos",
     x = "Receiver",
     y = "Pression"
   )
@@ -105,7 +105,7 @@ all_graph <- ggarrange(plotlist = plots, ncol = Ncol, nrow = Ncol)
 ggsave(paste(file, "_freq.png", sep = ""), plot = all_graph, width = 8, height = 6, dpi = 300, bg = "white")
 
 ##################################################
-#                 Spectogramme                   #
+#                 Spectrogram                    #
 ##################################################
 
 time <- (df$Time- df$Time[1]) * dt 
@@ -162,8 +162,8 @@ for (receiver in 2:ncol(df)) {
     geom_line(aes(y = envelope), color = "red", size = 0.9) +
     theme_minimal() +
     labs(
-      title = paste("Enveloppe -", colnames(df)[receiver]),
-      x = "Temps (s)",
+      title = paste("Spectrogram -", colnames(df)[receiver]),
+      x = "Time (s)",
       y = "Amplitude"
     ) +
     theme(legend.position = "none")
@@ -173,7 +173,7 @@ for (receiver in 2:ncol(df)) {
 Ncol <- ceiling(sqrt(ncol(df) - 1))
 all_graph <- ggarrange(plotlist = plots, ncol = Ncol, nrow = Ncol)
 
-ggsave(paste(file, "_enveloppe.png", sep = ""), all_graph, width = 10, height = 8, dpi = 300, bg = "white")
+ggsave(paste(file, "_spectrogram.png", sep = ""), all_graph, width = 10, height = 8, dpi = 300, bg = "white")
 
 ##################################################
 #              pression_distribution             #
@@ -189,7 +189,10 @@ graph <- ggplot(dataframe, aes(x = pres)) +
   geom_histogram(fill = "darkorchid4", color = "darkgray", bins = 10) +
   scale_x_continuous(name = "Pressure") +
   ylab("Count") +
-  theme_minimal()
+  theme_minimal() +
+  labs(
+    title = "pression distribution"
+  )
 
 ggsave(paste(file, "_pression_distribution.png", sep = ""), plot = graph, width = 8, height = 6, dpi = 300, bg = "white")
 
