@@ -43,6 +43,10 @@ for snapshot in *.snapshot; do
     Rscript ../pressure_map.R $snapshot
 done
 
+for sismos in *.sismos; do
+    Rscript ../sismos_plot.R $sismos
+done
+
 Rscript ../version_cmp.R output
 
 echo "ffconcat version 1.0" > concat.txt 

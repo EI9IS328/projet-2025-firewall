@@ -40,5 +40,32 @@ yz <- ggplot(df, aes(x = y, y = z, fill = num)) +
 
 #ggsave(paste(input_file, "y_z.png", sep = ""), width = 8, height = 6)
 
-res <- ggarrange(xy, xz, yz, labels = c("XY Slice", "XZ Slice", "YZ Slice"),ncol = 2, nrow = 2)
+pressure <- colnames(df)[4:ncol(df)]
+
+x <- as.numeric(df[[pressure[1]]])
+  
+mean_vals   <- mean(x, na.rm = TRUE)
+median_vals <- median(x, na.rm = TRUE)
+min_vals    <- min(x, na.rm = TRUE)
+max_vals    <- max(x, na.rm = TRUE)
+sd_vals     <- sd(x, na.rm = TRUE)
+
+# Create a data frame for the table
+stats_df <- data.frame(
+  Statistique = c("Mean", "Median", "Minimum", "Maximum", "Standard Deviation"),
+  Valeur = c(
+    sprintf("%.4f", mean_vals),
+    sprintf("%.4f", median_vals),
+    sprintf("%.4f", min_vals),
+    sprintf("%.4f", max_vals),
+    sprintf("%.4f", sd_vals)
+  )
+)
+
+stats_table <- ggtexttable(stats_df, rows = NULL,
+                           theme = ttheme("mBlue")) +
+  theme(plot.background = element_rect(fill = "white", color = NA),
+        panel.background = element_rect(fill = "white", color = NA))
+
+res <- ggarrange(xy, xz, yz,stats_table, labels = c("XY Slice", "XZ Slice", "YZ Slice", "Descriptive Statistics"),ncol = 2, nrow = 2)
 ggsave(paste(input_file, "_res.png", sep = ""), width = 8, height = 6)
