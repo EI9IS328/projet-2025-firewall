@@ -39,18 +39,40 @@ fonctionnel dans la branche principale et de vraiment savoir ce que modifie chaq
 \subsection{Snaphots}
 
 \subsection{Sismos}
-Au départ, nous ne possédions les données de sismos que d'un seul récepteur. De plus, ces données étaient "perdues", 
+Au départ, nous ne possédions les données de sismos que d'un seul récepteur. De plus, ces données étaient "perdues",
 elles n'étaient pas sauvegardées, il était donc impossible de faire des traitements dessus.
 Nous avons donc rajouté des fonctionnalités dans l'application afin de pouvoir gérer plusieurs récepteurs et sauvegarder les données dans un fichier.
 Les options \textit{sismos} \textit{set-receivers} et \textit{sismos-folder} nous permettent respectivement d'activer la sauvegarde des sismos,
 de choisir un fichier contentant les récepteurs à monitorer et le dossier de sauvegarde du fichier.
-Lorsque l'on active l'option sismos, nous obtenons donc un fichier contenant sur chaque ligne le temps et la mesure de pression au récepteur.
+
+Nous avons fixé le format du fichier dès le départ afin de pouvoir se répartir le travail et pouvoir produire des visualisations à partir de données
+d'exemple avant d'avoir terminé l'implémentation des sismos.
+Lorsque l'on active l'option sismos, nous obtenons donc un fichier contenant sur chaque ligne le temps et la mesure de pression sur chaque récepteur.
+C'est un fichier contenant un header
 
 Ce fichier peut ensuite être utilisé à des fins de visualisation, pour produire des courbes représentant la variabilité des pressions aux récepteurs données au cours du temps.
-
 \section{Workflow in-situ}
 
+Ensuite, nous avons implémenté un workflow in-situ : l'analyse et la visualisation des données se fait en direct, il n'y a pas d'écritures de données brutes de l'application 
+dans des fichiers. Cela permet de réduire le surcout d'écriture, mais aussi celui de chargement et de visualisation, qui peut être très lourd lorsque l'on charge des dizaines de 
+snapshots dépassant le Gigaoctet de stockage.
+
+Nous avons essayé d'avoir le plus d'analyses similaires à celles du workflow ad-hoc afin d'être plus juste sur nos comparaisons en temps.
+Nous avons toutefois réduits le nombre d'analyses des sismogrammes, il y a peu de données que l'on enregistre et nous pensons que les analyses que nous produisons à partir des snapshots
+seraient plus pertinent pour les utilisateurs métier.
+
 \section{Compression des données}
+
+Dans notre projet, nous avons décidé d'implémenter la compression avec perte, dote "Lossy".
+D'autres approches existent, comme la compression sans perte ou "Lossless". 
+Il aurait été pertinent de comparer ces deux méthodes afin de voir les avantages et inconvénients de chaque, mais nous n'avons pas pu le faire par manque de temps.
+Les données que nous avons compressées sont les snapshots : ce sont les fichiers qui prennent le plus de place, prenant parfois plus d'un Go de stockage.
+Les données que nous stockons à l'intérieur sont les coordonnées d'un point ainsi que sa pression. Le nombre de points sauvegardés dépend bien évidement du type de snapshot :
+total ou par slice.
+Les coordonnées sont des entiers que nous n'allons pas compresser. En revanche nous avons décidé de compresser la pression, en passant d'un \textit{float} (32 bits) à un 
+\textit{short int} (16 bits). L'utilisation de plus petits types de données comme les flottants 8 bits ou même 4 bits auraient pu être intéressants pour voir
+si la compression faisait vraiment gagner de la place sans trop perdre en précisions. En revanche, les standards utilisés dans l'application rendaient 
+l'utilisation de ces types plus compliquée et nous nous sommes contentés de diviser par 2 la taille des nombres stockés.
 
 \section{Comparaison ad-hoc vs in-situ}
 
