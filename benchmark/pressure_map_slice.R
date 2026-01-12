@@ -10,12 +10,35 @@ input_file_xy <- args[1]
 input_file_xz <- args[2]
 input_file_yz <- args[3]
 
+if (length(args)>=4) {
+  compression_file <- args[4]
+  compressed <- TRUE
+  current_snap <- as.numeric(args[5])
+} else {
+  compressed <- FALSE
+}
 xy <- read.table(input_file_xy, header = T, dec =".")
 xz <- read.table(input_file_xz, header = T, dec =".")
 yz <- read.table(input_file_yz, header = T, dec =".")
 
-# xy plot
-xy_plot <- ggplot(xy, aes(x = x, y = y, fill = pressure)) +
+color_palette <- colorRampPalette(c("blue", "yellow", "red"))
+num <- as.numeric(xy$pressure)
+if(compressed == TRUE){
+  comp_info <- read.table(compression_file, header = T, dec =" ")
+  vmin  <- as.numeric(comp_info$vmin[current_snap])
+  delta <- as.numeric(comp_info$delta[current_snap])
+  num <- vmin + (num * delta)
+}
+#plot(df$x, df$y, col = colors, pch=19)
+
+#ggplot(df, aes(x = x, y = y, color = num)) +
+#  geom_point(size = 3) +
+#  scale_color_gradient2(low = "blue", mid = "yellow", high = "red") +
+#  theme_minimal() +
+#  theme(legend.position = "none")
+
+xy_plot <- ggplot(xy, aes(x = x, y = y, fill = num)) +
+
   geom_tile() +
   scale_fill_gradient2(low = "blue", mid = "yellow", high = "red") +
   theme(legend.position = "left") +

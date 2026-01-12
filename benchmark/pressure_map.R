@@ -6,10 +6,23 @@ if (length(args)==0) {
   stop("no snapshot file provided", call.=FALSE)
 } 
 input_file <- args[1]
-
+if (length(args)>=2) {
+  compression_file <- args[2]
+  compressed <- TRUE
+  current_snap <- as.numeric(args[3])
+} else {
+  compressed <- FALSE
+}
 df <- read.table(input_file, header = T, dec =" ")
 color_palette <- colorRampPalette(c("blue", "yellow", "red"))
 num <- as.numeric(df$pressure)
+
+if(compressed == TRUE){
+  comp_info <- read.table(compression_file, header = T, dec =" ")
+  vmin  <- as.numeric(comp_info$vmin[current_snap])
+  delta <- as.numeric(comp_info$delta[current_snap])
+  num <- vmin + (num * delta)
+}
 colors <- color_palette(500)[as.numeric(cut(num, breaks = 500))]
 #plot(df$x, df$y, col = colors, pch=19)
 

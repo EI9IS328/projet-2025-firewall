@@ -95,6 +95,7 @@ class SEMproxy
   int snap_time_interval_;
   std::string snap_folder_;
   bool save_slices;
+  bool is_compressed_;
 
   std::string sismos_folder_;
   bool is_sismos_;
@@ -154,11 +155,11 @@ class SEMproxy
   SolverFactory::meshType getMesh(string meshArg);
 
   // snapshot
-  int generate_snapshot(int indexTimeSample);
+  int generate_snapshot(int indexTimeSample, std::ofstream& compression_file);
 
   void generate_in_situ_stats(int indexTimeSample);
   void export_ppm_slice(int indexTimeSample, int dim);
-  int generate_snapshot_slice(int indexTimeSample, int dim);
+  int generate_snapshot_slice(int indexTimeSample, int dim, std::ofstream& compression_file);
 };
 
 #endif /* SEMPROXY_HPP_ */
