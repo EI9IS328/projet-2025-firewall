@@ -35,7 +35,7 @@ class SEMproxy
   /**
    * @brief Destructor of the SEMproxy class
    */
-  ~SEMproxy(){};
+  ~SEMproxy() {};
 
   /**
    * @brief Initialize the simulation.
@@ -95,6 +95,7 @@ class SEMproxy
   int snap_time_interval_;
   std::string snap_folder_;
   bool save_slices;
+  bool is_compressed_;
 
   std::string sismos_folder_;
   bool is_sismos_;
@@ -115,6 +116,17 @@ class SEMproxy
   const int sourceOrder = 2;
   int myElementSource = 0;
   int nbReceivers = 1;
+
+  // time counters
+  double snapshotTime = 0.0;
+  double sliceTime = 0.0;
+  double inSituTime = 0.0;
+
+  // snapshot size analysis
+  int totalSnapshotSize = 0;
+  int snapshotCount = 0;
+  int minSnapshotSize = INT_MAX;
+  int maxSnapshotSize = INT_MIN;
 
   std::shared_ptr<model::ModelApi<float, int>> m_mesh;
   std::unique_ptr<SEMSolverBase> m_solver;
@@ -143,11 +155,11 @@ class SEMproxy
   SolverFactory::meshType getMesh(string meshArg);
 
   // snapshot
-  void generate_snapshot(int indexTimeSample);
+  int generate_snapshot(int indexTimeSample, std::ofstream& compression_file);
 
   void generate_in_situ_stats(int indexTimeSample);
   void export_ppm_slice(int indexTimeSample, int dim);
-  void generate_snapshot_slice(int indexTimeSample, int dim);
+  int generate_snapshot_slice(int indexTimeSample, int dim, std::ofstream& compression_file);
 };
 
 #endif /* SEMPROXY_HPP_ */

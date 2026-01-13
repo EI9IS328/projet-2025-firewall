@@ -19,6 +19,7 @@
 #include <sstream>
 #include <variant>
 #include <vector>
+#include <filesystem>
 
 using namespace SourceAndReceiverUtils;
 
@@ -100,6 +101,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   is_snapshots_ = opt.enableSnapshots;
   snap_time_interval_ = opt.intervalSnapshots;
   save_slices = opt.saveSlices;
+  is_compressed_ = opt.enableCompression;
 
   is_sismos_ = opt.enableSismos;
   snap_folder_ = opt.folderSnapshots;
@@ -209,7 +211,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Ex=" << ex << " Ey=" << ey << " Ez=" << ez << std::endl;
 }
 
-void SEMproxy::generate_snapshot(int indexTimeSample)
+int SEMproxy::generate_snapshot(int indexTimeSample,std::ofstream& compression_file)
 {
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
@@ -229,7 +231,23 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
   if (!outfile)
   {
     std::cerr << "Error: Could not open file " << filename.str() << std::endl;
-    return;
+    return -1;
+  }
+
+  float delta, vmin, vmax;
+  if (is_compressed_)
+  {
+    vmin = pnGlobal(0, i1);
+    vmax = pnGlobal(0, i1);
+    for (int n = 0; n < numNodes; ++n)
+    {
+      float p = pnGlobal(n, i1);
+      if (p < vmin) vmin = p;
+      if (p > vmax) vmax = p;
+    }
+    delta = (vmax - vmin) / (pow(2, 16) - 1);
+    compression_file <<"" << vmin << " " << vmax << " " << delta
+    << " " << 16 << "\n";
   }
 
   outfile << "x y z pressure\n";
@@ -240,12 +258,23 @@ void SEMproxy::generate_snapshot(int indexTimeSample)
     float y = m_mesh->nodeCoord(n, 1);
     float z = m_mesh->nodeCoord(n, 2);
     float p = pnGlobal(n, i1);
-    outfile << x << " " << y << " " << z << " " << p << "\n";
+    if (is_compressed_)
+    {
+      short pComp = short((p - vmin) / delta);
+      //float reconstructedP = (pComp * delta) + vmin;
+      //float error = p - reconstructedP;
+      outfile << x << " " << y << " " << z <<  " " << pComp << "\n";
+    }
+    else
+    {
+      outfile << x << " " << y << " " << z << " " << p << "\n";
+    }
   }
 
   outfile.close();
 
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
+  return std::filesystem::file_size(filename.str());
 }
 
 void SEMproxy::generate_in_situ_stats(int indexTimeSample)
@@ -271,8 +300,8 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
     return;
   }
 
-  float min = pnGlobal(0, i1);
-  float max = pnGlobal(0, i1);
+  float min = pnGlobal(0, i2);
+  float max = pnGlobal(0, i2);
   float mean = 0;
   float var = 0;
   int nbBars = 10;
@@ -280,25 +309,34 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
 
   for (int n = 0; n < numNodes; ++n)
   {
-    float p = pnGlobal(n, i1);
+    float p = pnGlobal(n, i2);
     if (p < min) min = p;
     if (p > max) max = p;
     mean += p;
   }
+  mean = mean / numNodes;
   int index;
   float barWidth = (max - min) / nbBars;
+  if (std::abs(max - min) < 1e-9) barWidth = 1.0f;  // Prevent div by zero
+
   for (int n = 0; n < numNodes; ++n)
   {
-    float p = pnGlobal(n, i1);
+    float p = pnGlobal(n, i2);
     var += (p - mean) * (p - mean);
-    index = (p - min) / barWidth;
+    if (std::abs(max - min) < 1e-9)
+      index = nbBars / 2;
+    else
+    {
+      index = (p - min) / barWidth;
+      if (index >= nbBars) index = nbBars - 1;
+    }
     histogram[index] += 1;
   }
   var = var / numNodes;
   double standardDeviation = sqrt(var);
   outfile << "min " << min << "\n";
   outfile << "max " << max << "\n";
-  outfile << "mean " << mean / numNodes << "\n";
+  outfile << "mean " << mean << "\n";
   outfile << "std " << standardDeviation << "\n";
   outfile << "Histogram of the pressure distribution\n";
   float bar = min;
@@ -309,12 +347,24 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
     bar += barWidth;
   }
 
+  if (is_sismos_)
+  {
+    outfile << "\nPressure at receivers\n";
+    outfile << "RecvCoords Pressure\n";
+    for (int indexRcv = 0; indexRcv < nbReceivers; indexRcv++)
+    {
+      outfile << "" << rcvCoords(indexRcv, 0) << "," << rcvCoords(indexRcv, 1)
+              << "," << rcvCoords(indexRcv, 2) << " "
+              << pnAtReceiver(indexRcv, indexTimeSample) << "\n";
+    }
+  }
+
   outfile.close();
 
   std::cout << "Saved in situ analysis to: " << filename.str() << std::endl;
 }
 
-void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
+int SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim, std::ofstream& compression_file)
 {
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
@@ -350,11 +400,30 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
   float spacing1 = m_mesh->getMinSpacing();
   float slice_coord = domain_size_[dim] / 2.0f;
 
+  float delta, vmin, vmax;
+  if (is_compressed_)
+  {
+    vmin = pnGlobal(0, i1);
+    vmax = pnGlobal(0, i1);
+    for (int n = 0; n < numNodes; ++n)
+    {
+      float p = pnGlobal(n, i1);
+      if (p < vmin) vmin = p;
+      if (p > vmax) vmax = p;
+    }
+    delta = (vmax - vmin) / (pow(2, 16) - 1);
+    if(dim==0){
+      compression_file <<"" << vmin << " " << vmax << " " << delta
+    << " " << 16 << "\n";
+    }
+    
+  }
+
   std::ofstream outfile(filename.str());
   if (!outfile)
   {
     std::cerr << "Error: Could not open file " << filename.str() << std::endl;
-    return;
+    return -1;
   }
 
   outfile << "x y z pressure\n";
@@ -367,13 +436,22 @@ void SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim)
     if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
     {
       float p = pnGlobal(n, i1);
-      outfile << x << " " << y << " " << z << " " << p << "\n";
+      if (is_compressed_)
+      {
+        short pComp = short((p - vmin) / delta);
+        outfile << x << " " << y << " " << z <<  " " << pComp << "\n";
+      }
+      else
+      {
+        outfile << x << " " << y << " " << z << " " << p << "\n";
+      }
     }
   }
 
   outfile.close();
 
   std::cout << "Saved snapshot to: " << filename.str() << std::endl;
+  return std::filesystem::file_size(filename.str());
 }
 
 void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
@@ -412,6 +490,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
       std::cout << "Failed to create directory.\n";
     }
   }
+
   filename << snap_folder_ << "/heatmap_" << name << "_" << indexTimeSample
            << ".ppm";
   int numNodes = m_mesh->getNumberOfNodes();
@@ -422,7 +501,6 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
     std::cerr << "Error: Could not open file " << filename.str() << std::endl;
     return;
   }
-
   int width = nb_elements_[firstDim] * m_mesh->getOrder();
   int height = nb_elements_[secondDim] * m_mesh->getOrder();
 
@@ -448,7 +526,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
   {
     if (std::abs(m_mesh->nodeCoord(n, dim) - slice_coord) < spacing1)
     {
-      float p = pnGlobal(n, i1);
+      float p = pnGlobal(n, i2);
       all_pressures.push_back(p);
       if (first)
       {
@@ -478,7 +556,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
 
       if (i >= 0 && i < width && j >= 0 && j < height)
       {
-        float p = pnGlobal(n, i1);
+        float p = pnGlobal(n, i2);
         float normalized_p = p / abs_max;
         slice_pixels[j][i].r =
             (normalized_p > 0.0f) ? static_cast<int>(255 * normalized_p) : 0;
@@ -496,6 +574,7 @@ void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
               << slice_pixels[j][i].b << "\n";
     }
   }
+  std::cout << "Saved heatmap to: " << filename.str() << std::endl;
   outfile.close();
 }
 
@@ -510,8 +589,26 @@ void SEMproxy::run()
   std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
   std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 
+  std::ofstream compression_file;
+  if(is_compressed_){
+    std::stringstream filename;
+    std::filesystem::path dir = snap_folder_;
+
+    if (!std::filesystem::exists(dir))
+    {
+      if (!std::filesystem::create_directory(dir))
+      {
+        std::cout << "Failed to create directory.\n";
+      }
+    }
+    filename << snap_folder_ << "/info.compression";
+
+    compression_file.open(filename.str());
+    compression_file << "vmin " << "vmax " << "delta " << "precision" << "\n";
+  }
+
   ofstream my_file;
-  if (is_sismos_)
+  if (is_sismos_ && !is_insitu_)
   {
     std::stringstream filename;
     std::filesystem::path dir = sismos_folder_;
@@ -549,33 +646,38 @@ void SEMproxy::run()
       m_solver->outputSolutionValues(indexTimeSample, i1, rhsElement[0],
                                      pnGlobal, "pnGlobal");
     }
-    if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
-    {
-      // call function to compute in-situ stats
-      generate_in_situ_stats(indexTimeSample);
-      export_ppm_slice(indexTimeSample, 0);
-      export_ppm_slice(indexTimeSample, 1);
-      export_ppm_slice(indexTimeSample, 2);
-    }
     if (is_snapshots_ && indexTimeSample % snap_time_interval_ == 0)
     {
+      int snapshotSize = 0;
       if (save_slices)
       {
-        generate_snapshot_slice(indexTimeSample, 0);
-        generate_snapshot_slice(indexTimeSample, 1);
-        generate_snapshot_slice(indexTimeSample, 2);
+        time_point<system_clock> start = system_clock::now();
+        snapshotSize += (generate_snapshot_slice(indexTimeSample, 0, compression_file)/1000000);
+        snapshotSize += (generate_snapshot_slice(indexTimeSample, 1, compression_file)/1000000);
+        snapshotSize += (generate_snapshot_slice(indexTimeSample, 2, compression_file)/1000000);
+        sliceTime += (system_clock::now() - start).count();
       }
       else
       {
-        generate_snapshot(indexTimeSample);
+        time_point<system_clock> start = system_clock::now();
+        snapshotSize = (generate_snapshot(indexTimeSample, compression_file)/1000000);
+        snapshotTime += (system_clock::now() - start).count();
       }
+      if (snapshotSize < minSnapshotSize){
+        minSnapshotSize = snapshotSize;
+      }
+      if (snapshotSize > maxSnapshotSize){
+        maxSnapshotSize = snapshotSize;
+      }
+      snapshotCount ++;
+      totalSnapshotSize += snapshotSize;
     }
 
     // Save pressure at receiver
     const int order = m_mesh->getOrder();
-    if (is_sismos_)
+    if (is_sismos_ && !is_insitu_)
     {
-      my_file << "t" << indexTimeSample << " ";
+      my_file << indexTimeSample << " ";
     }
     for (int indexRcv = 0; indexRcv < nbReceivers; indexRcv++)
     {
@@ -599,28 +701,41 @@ void SEMproxy::run()
       }
 
       pnAtReceiver(indexRcv, indexTimeSample) = varnp1;
-      if (is_sismos_)
+      if (is_sismos_ && !is_insitu_)
       {
         my_file << "" << varnp1 << " ";
       }
       // cout << "" <<varnp1<<" ";
     }
     swap(i1, i2);
+    if (is_insitu_ && indexTimeSample % insitu_time_interval_ == 0)
+    {
+      // call function to compute in-situ stats
+      time_point<system_clock> start = system_clock::now();
+      generate_in_situ_stats(indexTimeSample);
+      export_ppm_slice(indexTimeSample, 0);
+      export_ppm_slice(indexTimeSample, 1);
+      export_ppm_slice(indexTimeSample, 2);
+      inSituTime += (system_clock::now() - start).count();
+    }
 
     auto tmp = solverData.m_i1;
     solverData.m_i1 = solverData.m_i2;
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
-    if (is_sismos_)
+    if (is_sismos_ && !is_insitu_)
     {
       my_file << "\n";
     }
     // cout << "\n";
   }
-  if (is_sismos_)
+  if (is_sismos_ && !is_insitu_)
   {
     my_file.close();
+  }
+  if(is_compressed_){
+    compression_file.close();
   }
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
@@ -634,6 +749,12 @@ void SEMproxy::run()
        << endl;
   cout << "---- Elapsed Output Time : " << outputtime_ms / 1E6 << " seconds."
        << endl;
+  cout << "Snapshot Time: " << snapshotTime / 1E9 << " seconds." << endl;
+  cout << "Slice Time: " << sliceTime / 1E9 << " seconds." << endl;
+  cout << "In-situ Time: " << inSituTime / 1E9 << " seconds." << endl;
+  cout << "Min snapshot Size: " << minSnapshotSize << " Mo" << endl;
+  cout << "Max snapshot Size: " << maxSnapshotSize << " Mo" << endl;
+  cout << "Mean snapshot Size: " << totalSnapshotSize/snapshotCount << " Mo" << endl;
   cout << "------------------------------------------------ " << endl;
 }
 
