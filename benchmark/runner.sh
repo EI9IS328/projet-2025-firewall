@@ -31,7 +31,11 @@ for pb_size in $PROBLEM_SIZE; do
         if [[ "$ENABLE_SNAPSHOTS" == false ]] ; then
             "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_no_snapshots_${pb_size}"
         else
-            "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" --enable-compression > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+            if [[ "$ENABLE_COMPRESSION" == false ]] ; then
+                "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}"> "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+            else
+                "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" --enable-compression> "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+            fi
         fi
     done
 done
@@ -50,6 +54,11 @@ for snapshot in *.snapshot; do
     else
         Rscript "$current_dir/pressure_map.R" $snapshot ${COMPRESSION_FILE} ${current_snap}
     fi
+done
+
+
+for sismos in *.sismos; do
+    Rscript "$current_dir"/sismos_plot.R $sismos
 done
 
 Rscript "$current_dir/version_cmp.R" output

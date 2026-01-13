@@ -1,7 +1,7 @@
 EXECUTABLE_PATH="../build/bin/semproxy"
 PROBLEM_SIZE="50"
 ENABLE_SNAPSHOTS=true
-ENABLE_COMPRESSION=false
+ENABLE_COMPRESSION=true
 SNAPSHOT_FREQUENCY=50
 MAX_TIME=1.2
 RECEIVERS_FILES="1"
@@ -27,7 +27,11 @@ echo "Running benchmarks..."
 for pb_size in $PROBLEM_SIZE; do
     for recv_file in $RECEIVERS_FILES; do
         echo "Problem size: ${pb_size}, Receivers file: ${recv_file}"
-        "$EXECUTABLE_PATH" --ex ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --slices --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}"  > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+        if [[ "$ENABLE_COMPRESSION" == false ]] ; then
+            "$EXECUTABLE_PATH" --ex ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --slices --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}"  > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+        else
+            "$EXECUTABLE_PATH" --ex ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval $SNAPSHOT_FREQUENCY --slices --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" --enable-compression > "${FOLDER}/output_snapshots_${pb_size}_${SNAPSHOT_FREQUENCY}"
+        fi
     done
 done
 
@@ -57,6 +61,10 @@ for file_xy in snapshot_xy_*.snapshot; do
     else
         echo "Warning: Missing matching files for ID $id"
     fi
+done
+
+for sismos in *.sismos; do
+    Rscript "$current_dir"/sismos_plot.R $sismos
 done
 
 echo "ffconcat version 1.0" > concat.txt 
