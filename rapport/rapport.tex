@@ -88,6 +88,15 @@ contrairement aux données textuelles qui seraient plutôt destinées aux métie
 \section{Workflow ad-hoc}
 
 \subsection{Snaphots}
+L'implémentation des snapshots complète repose sur le parcours de du tableau `pnGlobal' afin de sauvegarder la pression à chaque point
+donné du maillage. Nous avons choisi de stocker ces informations sous forme de texte avec des fichier de la forme de CSV. Cela facilite
+leur lecture que ce soit par nous, développeurs, pour identifier si les valeurs semblent "choérente" lors du développement, mais également
+par les autres corps de métiers qui pourraient avoir besoin de les parcourir (et qui n'ont pas forcément les compétences en informatique pour transformer
+un binaire en texte). De plus, cela permet de faciliter le changement de système de visualisation. Ici, puisque toutes nos visualisations \textit{ad-hoc} sont faites
+en \textit{R}, la lecture d'un fichier type CSV se fait facilement et de mainère directe. Si l'on voulait ajouter des visualisations avec un autre logiciel,
+il serait simple de lire les données sur celui-ci puisque les fichiers CSV sont massivement supportés. Cepedant, ce choix d'implémentation aura un impact direct
+sur la taille et le temps nécessaire à écrire les snapshots. Comme le but du projet est de produire et comparer avec un workflow in-situ, les snapshots serviront à 
+terme uniquement pour la sauvegarde d'état de la simulation. L'impact de ce choix sera donc moindre puisque les visualisations passeront par d'autres systèmes. 
 
 \subsection{Sismos}
 Au départ, nous ne possédions les données de sismos que d'un seul récepteur. De plus, ces données étaient "perdues",
