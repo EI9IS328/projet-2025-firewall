@@ -276,3 +276,8 @@ receiver.dat
 
 *.err
 benchmark_comparison.png
+*.aux
+*.gz
+*.fls
+*latexmk
+*.toc
