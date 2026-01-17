@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[a4paper]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage[french]{babel}
@@ -8,7 +8,7 @@
 \usepackage{graphicx}
 \usepackage{placeins}
 \usepackage{todonotes}
-
+\graphicspath{ {./res/} }
 \usepackage{xcolor}
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -55,9 +55,17 @@ Lors de chaque TD, nous créons des issues, que nous nous répartissons dans le 
 Chaque membre du groupe possède un bout du TD à réaliser et aide les autres s'il finit en avance. Nous avons des branches pour chaque
 fonctionnalité et nous utilisons les merge requests afin de vérifier le travail des autres membres. Cela nous permet d'avoir du code
 fonctionnel dans la branche principale et de vraiment savoir ce que modifie chaque personne.
-
+L'IA a été utilisée dans la génération du code, notamment avec Gemini 3 Pro. Nous l'avons utilisée principalement afin de corriger des bugs dans la partie en C++.
 
 \section{Présentation de l'application}
+
+Ce projet reprend la base de code du projet FunTiDES : "Fast Unstructured Time Dynamic Equation Solver". Il s'agit d'un logiciel de simulation numérique permettant
+de simuler la propagation d'ondes acoustiques et sismiques dans un milieu.
+Le projet original permet de connaitre la composition du sol sans creuser. C'est un programme très adapté du HPC (Calcul Haute Performance)
+car les calculs internes sont coûteux, les données sont des maillages pouvant être très volumineux.
+Nous travaillons sur une version simplifiée du phénomène physique réel, avec une propagation d'onde acoustique dans le même matériau
+et avec le rebond de l'onde lorsqu'elle touche le bord.
+
 
 \section{Positionnement selon la taxonomie de Childs et al. (2020)}
 \todo[inline]{Rajouter la citation vers l'article de référence}
@@ -112,6 +120,16 @@ contrairement aux données textuelles qui seraient plutôt destinées aux métie
 \subsection{Fréquence de sortie (Output Frequency)}
 %À quelle fréquence produisez-vous des sorties ? Comment ce paramètre impacte-t-il le compromis entre
 %fidélité temporelle et coût I/O ?
+Nous pouvons gérer presque toutes nos fréquences de sortie, que ce soit les snaphots, les slices ou les analyses in-situ.
+Par défaut, nous avons décidé de sauvegarder les données toutes les 50 itérations. C'est évidemment un paramètre à adapter selon
+la taille de la simulation et le besoin en visualisation.
+Les pressions aux sismogrammes sont sauvegardées toutes les itérations, mais ce n'est pas trop coûteux car tout est déjà sauvegardé et une seule ligne est écrite à chaque fois.
+Les snapshots étant très couteux à sauvegarder et à visualiser, une sauvegarde trop fréquente ralentit beaucoup l'application. En revanche, leur sauvegarde régulière 
+peut être utile pour recharger les données et repartir d'un snapshot, en cas de crash de l'application par exemple. Nous n'avons pas implémenté cette fonctionnalité.
+Si l'on veut avoir des visualisations très complètes, il faut donc faire des sauvegardes très régulières, mais l'application sera fortement ralentie. La fréquence 
+de sauvegarde est vraiment à adapter au cas par cas, selon les temps de simulation et les besoins de l'équipe en visualisation.
+
+
 \section{Workflow ad-hoc}
 
 \subsection{Snaphots}
@@ -150,19 +168,34 @@ int SEMproxy::generate_snapshot_slice(int indexTimeSample,
     int dim, std::ofstream& compression_file)
 \end{lstlisting}
 
-\subsection{Sismos}
-Au départ, nous ne possédions les données de sismos que d'un seul récepteur. De plus, ces données étaient "perdues",
+\subsection{Sismogrammes}
+Au départ, nous ne possédions les données de sismogrammes que d'un seul récepteur. De plus, ces données étaient "perdues",
 elles n'étaient pas sauvegardées, il était donc impossible de faire des traitements dessus.
 Nous avons donc rajouté des fonctionnalités dans l'application afin de pouvoir gérer plusieurs récepteurs et sauvegarder les données dans un fichier.
-Les options \textit{sismos} \textit{set-receivers} et \textit{sismos-folder} nous permettent respectivement d'activer la sauvegarde des sismos,
+Les options \textit{sismos} \textit{set-receivers} et \textit{sismos-folder} nous permettent respectivement d'activer la sauvegarde des sismogrammes,
 de choisir un fichier contentant les récepteurs à monitorer et le dossier de sauvegarde du fichier.
 
 Nous avons fixé le format du fichier dès le départ afin de pouvoir se répartir le travail et pouvoir produire des visualisations à partir de données
-d'exemple avant d'avoir terminé l'implémentation des sismos.
+d'exemple avant d'avoir terminé l'implémentation des sismogrammes.
 Lorsque l'on active l'option sismos, nous obtenons donc un fichier contenant sur chaque ligne le temps et la mesure de pression sur chaque récepteur.
-C'est un fichier contenant un header
+C'est un fichier contenant un header contenant le timestep et  les coordonnées des récepeteus. Les coordonnées des récepteurs sont sous la forme \textit{coordX,coordY,coordZ} 
+et chaque élément est séparé par un espace. Comme pour les snapshots, nous avons fait le choix de sauvegarder les sismogrammes dans un fichier texte afin de pouvoir lire facilement les données.
 
 Ce fichier peut ensuite être utilisé à des fins de visualisation, pour produire des courbes représentant la variabilité des pressions aux récepteurs données au cours du temps.
+
+\subsection{Analyses et Visualisations}
+Afin d'analyser et visualiser nos différentes sorties, nous avons créé plusieurs scripts.
+Tout d'abord, nous avons un formatteur en Python qui parse la sortie du programme afin de sortir les informations nécessaires à la suite de l'analyse comme le temps de calcul, la fréquence des snapshots,...
+Nous avons ensuite des scripts R permettant de produire différentes statistiques et visualisations concernant les sismogrammes et snaphots.
+
+Le script \textit{pressure\_map.R} permet d'analyser les snaphots et \textit{pressure\_map\_slice.R} analyse les slices de snapshot. Ces scripts nous permettent de visualiser
+
+L'analyse des sismogrammes est automatisée via le script \textit{sismos\_plot.R}. Ce script génère un ensemble de visualisations: un histogramme de la distribution 
+des pressions pour évaluer son amplitude, une analyse de Fourier (FFT) pour extraire le contenu fréquentiel du signal, ainsi qu'un boxplot contenant les statistiques descriptives (min, max, médiane) par récepteur. 
+Enfin, un tracé de l'enveloppe temporelle, appelé spectrogramme dans notre fichier permet de suivre l'évolution de l'énergie de l'onde.
+
+\textit{version\_cmp.R} permet de comparer les différentes versions grâce à la sortie du formatteur.
+
 \section{Workflow in-situ}
 
 Ensuite, nous avons implémenté un workflow in-situ : l'analyse et la visualisation des données se fait en direct, il n'y a pas d'écritures de données brutes de l'application 
@@ -170,8 +203,18 @@ dans des fichiers. Cela permet de réduire le surcout d'écriture, mais aussi ce
 snapshots dépassant le Gigaoctet de stockage.
 
 Nous avons essayé d'avoir le plus d'analyses similaires à celles du workflow ad-hoc afin d'être plus juste sur nos comparaisons en temps.
-Nous avons toutefois réduits le nombre d'analyses des sismogrammes, il y a peu de données que l'on enregistre et nous pensons que les analyses que nous produisons à partir des snapshots
+Nous avons toutefois réduit le nombre d'analyses des sismogrammes, il y a peu de données que l'on enregistre et nous pensons que les analyses que nous produisons à partir des snapshots
 seraient plus pertinent pour les utilisateurs métier.
+
+L'utilisateur doit définir la fréquence des traitements in-situ. Par défaut, ceux-ci seront effectués toutes les 50 itérations. 
+Lorsque le traitement doit être effectué, nous mettons en pause la simulation, les traitements ne sont pas asynchrones. Nous appelons la fonction \textit{generate\_in\_situ\_stats}
+afin de parcourir les données et écrire dans un fichier les informations importantes : valeur minimale et maximale de la pression sur le maillage, moyenne, écart-type, nous avons aussi
+un histogramme de la distribution de la pression sur le maillage. Nous enregistrons aussi la pression aux récepteurs, mais n'effectuons pas de traitements sur les données des sismogrammes.
+Cette partie est sauvegardée sous la forme de fichier texte afin de simplifier le code. D'autres techniques sont possibles comme l'utilisation d'Adios2
+mais nous avons choisi la simplicité de lecture de nos fichiers.
+Un fichier est créé pour chaque sauvegarde de traitement, nous avons donc autant de fichiers que de fichiers de snapshots si nous emttons la même fréquence. En revanche, le poids des fichiers de traitement in-situ est
+assez négligeable, nous avons des fichiers de quelques lignes contre des milliers pour les snapshots.
+Nous avons également des sauvegardes de heatmaps de pression sur des slices, que nous détaillons partie \ref{part:slicePPM}.
 
 \subsection{Slice PPM}\label{part:slicePPM}
 Pour éviter de sauvegarder des slices dans le seul but de les visualiser par la suite, nous avons ajouter la fonction \textit{export\_ppm\_slice}. Celle-ci
