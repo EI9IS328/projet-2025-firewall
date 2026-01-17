@@ -9,6 +9,33 @@
 \usepackage{placeins}
 \usepackage{todonotes}
 
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
 
 \title{Rapport Traitement des données in-situ \break Équipe Firewall}
 \author{Valentin Jonquière, Mathilde Chollon, Calliste Boudoux d'Hautefeuille}
@@ -88,6 +115,7 @@ contrairement aux données textuelles qui seraient plutôt destinées aux métie
 \section{Workflow ad-hoc}
 
 \subsection{Snaphots}
+\subsubsection{Snapshots globales}
 L'implémentation des snapshots complète repose sur le parcours de du tableau `pnGlobal' afin de sauvegarder la pression à chaque point
 donné du maillage. Nous avons choisi de stocker ces informations sous forme de texte avec des fichier de la forme de CSV. Cela facilite
 leur lecture que ce soit par nous, développeurs, pour identifier si les valeurs semblent "choérente" lors du développement, mais également
@@ -96,7 +124,31 @@ un binaire en texte). De plus, cela permet de faciliter le changement de systèm
 en \textit{R}, la lecture d'un fichier type CSV se fait facilement et de mainère directe. Si l'on voulait ajouter des visualisations avec un autre logiciel,
 il serait simple de lire les données sur celui-ci puisque les fichiers CSV sont massivement supportés. Cepedant, ce choix d'implémentation aura un impact direct
 sur la taille et le temps nécessaire à écrire les snapshots. Comme le but du projet est de produire et comparer avec un workflow in-situ, les snapshots serviront à 
-terme uniquement pour la sauvegarde d'état de la simulation. L'impact de ce choix sera donc moindre puisque les visualisations passeront par d'autres systèmes. 
+terme uniquement pour la sauvegarde d'état de la simulation. L'impact de ce choix sera donc moindre puisque les visualisations passeront par d'autres systèmes.
+
+C'est pour cela que nous avons ajouté l'option \textit{--save-interval [interval]} permettant de sauvergader les snapshots toutes les \textit{interval} itérations.
+Pour la visualisation nous préférerons utiliser les méthodes des parties \ref{part:snapshotsSlices} et \ref{part:slicePPM}.
+
+Il est donc possible de générer des visualisations à partir de ces snapshots avec le fichier \textit{pressure\_map.R}. Celui-ci génère trois heatmaps différentes correspondant
+au différents plans du maillage. On retrouve un exemple de visualisation en Figure \ref{}. Sur ce type de visualisation, on retrouve également les statistiques descriptives présentées
+en section \ref{}
+
+\todo[inline]{AJOUTER UN EXEMPLE DE FIGURE}
+\todo[inline]{AJOUTER REF VERS SECTION STAT DESC}
+\subsubsection{Snapshots slice}\label{part:snapshotsSlices}
+Afin de limiter l'impact des snapshots, nous avons mis en place un système de \textit{slice}. L'objectif est ici de créer des snapshots spécifiques à la visualisation
+afin de diminuer les coûts pour générer nos heatmaps. Pour ce faire nous avons ajouter une fonction \textit{generate\_snapshot\_slice} visible dans le Listing \ref{lst:slices}.
+Nous avons ajouté un paramètre \textit{dim} permettant de choisir sur quelle dimension doit être effectuée la coupe. Il est possible de faire des XY, XZ et YZ. La coupe se fait alors sur le milieu du maillage sur le plan
+demandé. Nous n'avons pas ajouté de paramètre permettant de choisir l'indice auquel la coupe doit être effectuée mais il serait simple et rapide de l'ajouter. Pour faire fonctionner
+nos visualisations avec les slices, nous avons modifié notre fichier \textit{pressure\_map.R} pour qu'il prenne en compte qu'il n'y avait plus que deux dimensions. Les images obtenues
+sont similaires à celles générées avec une snapshot complète.
+
+
+
+\begin{lstlisting}[caption={Signature de la fonction generate\_snapshot\_slice}, language=c, label={lst:slices}]
+int SEMproxy::generate_snapshot_slice(int indexTimeSample,
+    int dim, std::ofstream& compression_file)
+\end{lstlisting}
 
 \subsection{Sismos}
 Au départ, nous ne possédions les données de sismos que d'un seul récepteur. De plus, ces données étaient "perdues",
@@ -120,6 +172,8 @@ snapshots dépassant le Gigaoctet de stockage.
 Nous avons essayé d'avoir le plus d'analyses similaires à celles du workflow ad-hoc afin d'être plus juste sur nos comparaisons en temps.
 Nous avons toutefois réduits le nombre d'analyses des sismogrammes, il y a peu de données que l'on enregistre et nous pensons que les analyses que nous produisons à partir des snapshots
 seraient plus pertinent pour les utilisateurs métier.
+
+\subsection{Slice PPM}\label{part:slicePPM}
 
 \section{Compression des données}
 
