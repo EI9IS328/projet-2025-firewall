@@ -57,6 +57,11 @@ fonctionnalité et nous utilisons les merge requests afin de vérifier le travai
 fonctionnel dans la branche principale et de vraiment savoir ce que modifie chaque personne.
 L'IA a été utilisée dans la génération du code, notamment avec Gemini 3 Pro. Nous l'avons utilisée principalement afin de corriger des bugs dans la partie en C++.
 
+Lors du dernier cours, nous avions présenté nos résultats dans une courte présentation en fin de scéance. Nous avons décidé de garder les mêmes figures. Cependant, pour les 
+graphiques que nous avons générés pour ce rapport nous avons changé l'axe des absisses. Avant, nous présentions le nombre de \textit{Nodes} alors que nous avons choisi d'uitliser
+la taille du domaine dans les derniers graphiques. Les deux notations sont équivalente car tous les points des graphiques correspondent aux tailles 50 à 150 avec un incrément de 10 
+entre chaque point. Nous avons laissé les graphiques avec l'ancienne notation pour correspondre à notre présentation.
+
 \section{Présentation de l'application}
 
 Ce projet reprend la base de code du projet FunTiDES : "Fast Unstructured Time Dynamic Equation Solver". Il s'agit d'un logiciel de simulation numérique permettant
@@ -133,7 +138,7 @@ de sauvegarde est vraiment à adapter au cas par cas, selon les temps de simulat
 \section{Workflow ad-hoc}
 
 \subsection{Snaphots}
-\subsubsection{Snapshots globales}
+\subsubsection{Snapshots globales}\ref{snapshots}
 L'implémentation des snapshots complète repose sur le parcours de du tableau `pnGlobal' afin de sauvegarder la pression à chaque point
 donné du maillage. Nous avons choisi de stocker ces informations sous forme de texte avec des fichier de la forme de CSV. Cela facilite
 leur lecture que ce soit par nous, développeurs, pour identifier si les valeurs semblent "choérente" lors du développement, mais également
@@ -280,5 +285,18 @@ en ad-hoc, on pourrait continuer de les sauvergader de la même manière que dan
 
 
 \section{Conclusion}
-\todo{PK ON A PAS FAIT DE L'ASYNC}
+
+Nous avons donc vu ici qu'il était nécessaire de faire un workflow in-situ si l'on souhaitait passer à l'échelle. Cependant, pour que celui-ci puisse produire
+des visualisations comparable avec celles du workflow ad-hoc comme l'ajout des textes, statistiques descriptives sur la même image, il aurait fallu utiliser
+des outils spécifiques à l'in-situ. On aurait par exemple pu utiliser Adios2 ou ParaView Catalyst pour créer des visualisations plus poussée tout en réduisant les 
+coûts d'un workflow ad-hoc.
+
+Pour améliorer les performances de nos workflows, il faudrait également passer par des sauvegardes en binaire plutôt qu'en texte comme évoqué dans la partie \ref{snapshots}.
+On pourrait également faire les sauvegarde en parallèle du calcul afin de ne pas se retrouver avec des phases de calcul puis d'I/O qui se suivent. L'idée serait ici de déclancher
+la sauvergarde de l'état tout en commençant le calcul de la prochaine itération.
+
+Pour finir, un workflow ad-hoc reste toujours interressant sur certains points. Tout d'abord il permet de bien séparer la partie visualisation de la partie calcul du code.
+Cela rend plus facile le développement en parallèle de ces briques de l'application, puisqu'il n'y a qu'à se fixer un format commun avant de pouvoir développer les deux parties
+de manières indépendantes. L'ad-hoc pourrait aussi permettre de ré-utiliser plus facilement un système de visualisation sur un autre code de calcul, car l'adaptation serait plus rapide 
+(et donc moins couteuse).
 \end{document}
