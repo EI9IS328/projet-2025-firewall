@@ -32,7 +32,7 @@ for pb_size in $PROBLEM_SIZE; do
     echo "Running in-situ"
     "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --in-situ --sismos > "${FOLDER}/output_snapshots_${pb_size}_in_situ"
     echo "Running reference"
-    $EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} > "${FOLDER}/output_snapshots_${pb_size}_ref"
+    "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} > "${FOLDER}/output_snapshots_${pb_size}_ref"
 done
 
 
