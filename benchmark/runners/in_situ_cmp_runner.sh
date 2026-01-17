@@ -1,5 +1,5 @@
 EXECUTABLE_PATH="../build/bin/semproxy"
-PROBLEM_SIZE="50 60 70 80 90 100 110 120"
+PROBLEM_SIZE="50 60 70 80 90 100 110 120 130 140 150"
 ENABLE_SNAPSHOTS=true
 SNAPSHOT_FREQUENCY="50"
 MAX_TIME=2.0
@@ -25,14 +25,18 @@ mkdir -p "${FOLDER}"
 echo "Running benchmarks..."
 for pb_size in $PROBLEM_SIZE; do
     echo "Problem size: ${pb_size}"
-    echo "Running slices 50 (visu)"
-    "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval 50 --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" --slices > "${FOLDER}/output_snapshots_${pb_size}_slice_50"
-    echo "Running snapshots 100"
+    echo "Running slices 200 (visu)"
+    "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval 200 --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" --slices > "${FOLDER}/output_snapshots_${pb_size}_slice_50"
+    echo "Running snapshots 200"
     "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval 200 --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" > "${FOLDER}/output_snapshots_${pb_size}_snap_200"
+    echo "Running slices 200 compressed"
+    "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval 200 --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" --slices  --enable-compression > "${FOLDER}/output_snapshots_${pb_size}_slice_50_compressed"
+    echo "Running snapshots 200 compressed"
+    "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --snapshot true --save-interval 200 --sismos true --sismos-folder "${FOLDER}" --snap-folder "${FOLDER}" --enable-compression > "${FOLDER}/output_snapshots_${pb_size}_snap_200_compressed"
     echo "Running in-situ"
     "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} --in-situ --sismos > "${FOLDER}/output_snapshots_${pb_size}_in_situ"
     echo "Running reference"
-    $EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} > "${FOLDER}/output_snapshots_${pb_size}_ref"
+    "$EXECUTABLE_PATH" --ex ${pb_size} --ey ${pb_size} --ez ${pb_size} --timemax ${MAX_TIME} > "${FOLDER}/output_snapshots_${pb_size}_ref"
 done
 
 

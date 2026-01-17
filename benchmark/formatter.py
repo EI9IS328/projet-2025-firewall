@@ -21,6 +21,8 @@ patterns = r"""
 [\s\S]*?
 ^In-situ\ enabled:\s*(?P<in_situ_enabled>.*)$
 [\s\S]*?
+^Compression\ enabled:\s*(?P<compression_enabled>.*)$
+[\s\S]*?
 ^Ex=(?P<Ex>\d+)\ Ey=(?P<Ey>\d+)\ Ez=(?P<Ez>\d+)$
 [\s\S]*?
 ^Min\ snapshot\ Size:\ (?P<min_snapshot_size>\d+)\ Mo$
@@ -36,7 +38,7 @@ patterns = r"""
 ^Elapsed\ TotalExe\ Time\ :\ (?P<TotalTime>[\d\.]+)\ seconds.$
 """
 
-header = "Nodes,Elements,Timestep, In-situ, Simulated Time,Snapshot Enabled,Snapshot Interval,Snapshot Slices,Receivers,Ex,Ey,Ez,Min Snapshot Size, Max Snapshot Size, Mean Snapshot Size, Initial Time,Compute Time,Total Time\n"
+header = "Nodes,Elements,Timestep, In-situ, Simulated Time,Snapshot Enabled,Snapshot Interval,Snapshot Slices,Receivers,Ex,Ey,Ez,Min Snapshot Size, Max Snapshot Size, Mean Snapshot Size, Initial Time,Compute Time,Total Time,Compression\n"
 parsed_data = []
 
 if len(sys.argv) != 2:
@@ -74,7 +76,8 @@ for filename in os.listdir(dir_path):
                                 extracted_data['mean_snapshot_size'],
                                 extracted_data['InitialTime'],
                                 extracted_data['ComputeTime'],
-                                extracted_data['TotalTime']])
+                                extracted_data['TotalTime'],
+                                extracted_data['compression_enabled']])
                 else:
                     print("Pattern not found")
 
