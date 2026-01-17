@@ -14,6 +14,7 @@
 #include <solver_factory.h>
 #include <utils.h>
 
+#include <climits>
 #include <memory>
 #include <string>
 #include <variant>
@@ -159,7 +160,8 @@ class SEMproxy
 
   void generate_in_situ_stats(int indexTimeSample);
   void export_ppm_slice(int indexTimeSample, int dim);
-  int generate_snapshot_slice(int indexTimeSample, int dim, std::ofstream& compression_file);
+  int generate_snapshot_slice(int indexTimeSample, int dim,
+                              std::ofstream& compression_file);
 };
 
 #endif /* SEMPROXY_HPP_ */

@@ -13,13 +13,13 @@
 #include <source_and_receiver_utils.h>
 
 #include <cxxopts.hpp>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <variant>
 #include <vector>
-#include <filesystem>
 
 using namespace SourceAndReceiverUtils;
 
@@ -211,7 +211,8 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Ex=" << ex << " Ey=" << ey << " Ez=" << ez << std::endl;
 }
 
-int SEMproxy::generate_snapshot(int indexTimeSample,std::ofstream& compression_file)
+int SEMproxy::generate_snapshot(int indexTimeSample,
+                                std::ofstream& compression_file)
 {
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
@@ -246,8 +247,8 @@ int SEMproxy::generate_snapshot(int indexTimeSample,std::ofstream& compression_f
       if (p > vmax) vmax = p;
     }
     delta = (vmax - vmin) / (pow(2, 16) - 1);
-    compression_file <<"" << vmin << " " << vmax << " " << delta
-    << " " << 16 << "\n";
+    compression_file << "" << vmin << " " << vmax << " " << delta << " " << 16
+                     << "\n";
   }
 
   outfile << "x y z pressure\n";
@@ -261,9 +262,9 @@ int SEMproxy::generate_snapshot(int indexTimeSample,std::ofstream& compression_f
     if (is_compressed_)
     {
       short pComp = short((p - vmin) / delta);
-      //float reconstructedP = (pComp * delta) + vmin;
-      //float error = p - reconstructedP;
-      outfile << x << " " << y << " " << z <<  " " << pComp << "\n";
+      // float reconstructedP = (pComp * delta) + vmin;
+      // float error = p - reconstructedP;
+      outfile << x << " " << y << " " << z << " " << pComp << "\n";
     }
     else
     {
@@ -364,7 +365,8 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   std::cout << "Saved in situ analysis to: " << filename.str() << std::endl;
 }
 
-int SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim, std::ofstream& compression_file)
+int SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim,
+                                      std::ofstream& compression_file)
 {
   std::stringstream filename;
   std::filesystem::path dir = snap_folder_;
@@ -412,11 +414,11 @@ int SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim, std::ofstrea
       if (p > vmax) vmax = p;
     }
     delta = (vmax - vmin) / (pow(2, 16) - 1);
-    if(dim==0){
-      compression_file <<"" << vmin << " " << vmax << " " << delta
-    << " " << 16 << "\n";
+    if (dim == 0)
+    {
+      compression_file << "" << vmin << " " << vmax << " " << delta << " " << 16
+                       << "\n";
     }
-    
   }
 
   std::ofstream outfile(filename.str());
@@ -439,7 +441,7 @@ int SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim, std::ofstrea
       if (is_compressed_)
       {
         short pComp = short((p - vmin) / delta);
-        outfile << x << " " << y << " " << z <<  " " << pComp << "\n";
+        outfile << x << " " << y << " " << z << " " << pComp << "\n";
       }
       else
       {
@@ -590,7 +592,8 @@ void SEMproxy::run()
   std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 
   std::ofstream compression_file;
-  if(is_compressed_){
+  if (is_compressed_)
+  {
     std::stringstream filename;
     std::filesystem::path dir = snap_folder_;
 
@@ -652,24 +655,33 @@ void SEMproxy::run()
       if (save_slices)
       {
         time_point<system_clock> start = system_clock::now();
-        snapshotSize += (generate_snapshot_slice(indexTimeSample, 0, compression_file)/1000000);
-        snapshotSize += (generate_snapshot_slice(indexTimeSample, 1, compression_file)/1000000);
-        snapshotSize += (generate_snapshot_slice(indexTimeSample, 2, compression_file)/1000000);
+        snapshotSize +=
+            (generate_snapshot_slice(indexTimeSample, 0, compression_file) /
+             1000000);
+        snapshotSize +=
+            (generate_snapshot_slice(indexTimeSample, 1, compression_file) /
+             1000000);
+        snapshotSize +=
+            (generate_snapshot_slice(indexTimeSample, 2, compression_file) /
+             1000000);
         sliceTime += (system_clock::now() - start).count();
       }
       else
       {
         time_point<system_clock> start = system_clock::now();
-        snapshotSize = (generate_snapshot(indexTimeSample, compression_file)/1000000);
+        snapshotSize =
+            (generate_snapshot(indexTimeSample, compression_file) / 1000000);
         snapshotTime += (system_clock::now() - start).count();
       }
-      if (snapshotSize < minSnapshotSize){
+      if (snapshotSize < minSnapshotSize)
+      {
         minSnapshotSize = snapshotSize;
       }
-      if (snapshotSize > maxSnapshotSize){
+      if (snapshotSize > maxSnapshotSize)
+      {
         maxSnapshotSize = snapshotSize;
       }
-      snapshotCount ++;
+      snapshotCount++;
       totalSnapshotSize += snapshotSize;
     }
 
@@ -734,7 +746,8 @@ void SEMproxy::run()
   {
     my_file.close();
   }
-  if(is_compressed_){
+  if (is_compressed_)
+  {
     compression_file.close();
   }
 
@@ -752,9 +765,13 @@ void SEMproxy::run()
   cout << "Snapshot Time: " << snapshotTime / 1E9 << " seconds." << endl;
   cout << "Slice Time: " << sliceTime / 1E9 << " seconds." << endl;
   cout << "In-situ Time: " << inSituTime / 1E9 << " seconds." << endl;
-  cout << "Min snapshot Size: " << minSnapshotSize << " Mo" << endl;
-  cout << "Max snapshot Size: " << maxSnapshotSize << " Mo" << endl;
-  cout << "Mean snapshot Size: " << totalSnapshotSize/snapshotCount << " Mo" << endl;
+  if (snapshotCount > 0)
+  {
+    cout << "Min snapshot Size: " << minSnapshotSize << " Mo" << endl;
+    cout << "Max snapshot Size: " << maxSnapshotSize << " Mo" << endl;
+    cout << "Mean snapshot Size: " << totalSnapshotSize / snapshotCount << " Mo"
+         << endl;
+  }
   cout << "------------------------------------------------ " << endl;
 }
 
