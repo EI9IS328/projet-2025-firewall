@@ -254,9 +254,21 @@ mais nous ne comptons pas le fichier \textit{.png} généré en \textit{ad-hoc}.
 suivantes (on ne compte pas les \textit{.png}).
 \section{Discussions sur la scalabilité}
 D'après les experiences que nous avons fait, on remarque que certaines versions ne pourraient pas passer à l'échelle. Il suffit de prendre la version utilisant
-les snapshots complets pour faire de la visualisation pour voir que 
+les snapshots complets pour faire de la visualisation pour voir que l'on ne pourra pas travailler avec de grands domaines. En effet, la taille des snapshots grandit
+très vite et l'on se retrouve avec des snapshots d'environ 1Go pour une taille de problème de seulement 150x150x150. De plus, avec cette version le temps d'exécution
+du workflow ad-hoc augmente de manière significative même avec des petites tailles. Il est donc impossible d'uitliser cette version pour des problème de grande taille,
+même avec beaucoup de ressources (elles ne seraient pas assez exploitée). 
+Si l'on souhaite pouvoir re-effectuer des visualisations, l'export sous forme de slice (compréssée ou non) semble être une bonne alternative. Elle ne force pas à
+utiliser le format PPM, mais il faudra tout de même penser au fait que les slices peuvent atteindre de tailles importante si la taille du problème est grande.
+
+Enfin, la version in-situ semble être la plus scalable. En effet, cette version solicite beaucoup moins les I/O que les autres. Quand on sait que les applications
+HPC sont souvent memory bound, il semble plus interressant de limiter le nombre d'I/O lorsque cela n'est pas nécessaire. Nous pensons que la version optimale devrait donc mixer
+la version avec les snapshots, qui serait ici utilisée afin de faire du checkpoiting permettant de pouvoir reprendre la simulation à un point donné. Ces snapshots ne seraient donc 
+pas générés à chaque itérations mais plutôt toutes les $K$ itérations afin de ne pas trop impacter les performances de l'application. Pour la visualisation, le workflow in-situ
+semble idéal pour rendre le programme performant pour la génération des heatmaps. Cependant, l'impact étant limité sur les sismogrammes et les visualisations de celui-ci bien plus explicite
+en ad-hoc, on pourrait continuer de les sauvergader de la même manière que dans le premier workflow. 
 
 
 \section{Conclusion}
-
+\todo{PK ON A PAS FAIT DE L'ASYNC}
 \end{document}
