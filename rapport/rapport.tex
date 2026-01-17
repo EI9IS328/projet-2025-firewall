@@ -196,6 +196,16 @@ Enfin, un tracé de l'enveloppe temporelle, appelé spectrogramme dans notre fic
 
 \textit{version\_cmp.R} permet de comparer les différentes versions grâce à la sortie du formatteur.
 
+Le coût de post-traitement est très élevé. Lors de nos expériences, nous avons fait des simulations avec des maillages allant de 50x50x50 à 120x120x120, comme le montre la Figure \ref{fig:post-treatment}.
+ Le temps de traitement ad-hoc a mis plus d'une demi-heure sur les plus grandes tailles. Étant donné que les simulations réelles sont effectuées sur des maillages bien plus grand, le temps
+d'analyse et de visualisation serait vraiment trop couteux.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{post_treatment.png}
+    \caption{Temps de post traitement en fonction de la taille du problème}
+    \label{fig:post-treatment}
+\end{figure}    
 \section{Workflow in-situ}
 
 Ensuite, nous avons implémenté un workflow in-situ : l'analyse et la visualisation des données se fait en direct, il n'y a pas d'écritures de données brutes de l'application 
