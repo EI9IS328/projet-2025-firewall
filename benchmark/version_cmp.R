@@ -117,3 +117,26 @@ ggplot(df, aes(x = Ex, y = Total.Time, color = Experiment)) +
   ylab("Total Time (s)")
 
 ggsave(paste(input_file, "_experiment.png", sep = ""), width = 8, height = 6)
+
+
+ggplot(df, aes(x = Ex, y = Mean.Snapshot.Size, color = Experiment)) +
+  geom_line(aes(group = Experiment)) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c(
+    "Reference" = "black",
+    "In-situ" = "#E69F00",
+    "Snapshots" = "#56B4E9",
+    "Slices" = "#009E73"
+  )) +
+  scale_y_log10() +
+  theme(
+    legend.position = c(0.05, 0.95),
+    legend.justification = c("left", "top"),
+    legend.background = element_rect(fill = "white", color = NA),
+    plot.title = element_text(face = "bold"),
+  ) +
+  guides(color = guide_legend(title = "Experiment Type")) +
+  xlab("Side size (ex=ey=ez)") +
+  ylab("Total Time (s)")
+
+ggsave(paste(input_file, "_experiment_size.png", sep = ""), width = 8, height = 6)
