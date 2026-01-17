@@ -208,9 +208,21 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Snapshot interval is " << snap_time_interval_ << std::endl;
   std::cout << "Number of receivers is " << nbReceivers << std::endl;
   std::cout << "In-situ enabled: " << is_insitu_ << std::endl;
+  std::cout << "Compression enabled: " << is_compressed_ << std::endl;
   std::cout << "Ex=" << ex << " Ey=" << ey << " Ez=" << ez << std::endl;
 }
 
+/**
+ * @brief Generates a full 3D snapshot of the pressure field.
+ *
+ * This function saves the pressure values for all nodes in the mesh to a file.
+ * If compression is enabled, the pressure values are quantized to reduce file
+ * size.
+ *
+ * @param indexTimeSample The current time step index.
+ * @param compression_file Stream for saving compression metadata if enabled.
+ * @return The size of the generated file in bytes.
+ */
 int SEMproxy::generate_snapshot(int indexTimeSample,
                                 std::ofstream& compression_file)
 {
@@ -278,6 +290,16 @@ int SEMproxy::generate_snapshot(int indexTimeSample,
   return std::filesystem::file_size(filename.str());
 }
 
+/**
+ * @brief Computes and saves in-situ statistics of the pressure field.
+ *
+ * This function calculates statistical metrics (min, max, mean, standard
+ * deviation) and a histogram of the pressure distribution at the current time
+ * step. It also saves pressure values at receiver locations if requested. This
+ * effectively reduces the data volume compared to saving full snapshots.
+ *
+ * @param indexTimeSample The current time step index.
+ */
 void SEMproxy::generate_in_situ_stats(int indexTimeSample)
 {
   std::stringstream filename;
@@ -365,6 +387,20 @@ void SEMproxy::generate_in_situ_stats(int indexTimeSample)
   std::cout << "Saved in situ analysis to: " << filename.str() << std::endl;
 }
 
+/**
+ * @brief Generates a 2D slice of the pressure field.
+ *
+ * This function extracts and saves pressure values along a 2D plane (yz, xz, or
+ * xy) intersecting the center of the domain. This is an alternative to full 3D
+ * snapshots to reduce I/O cost while preserving spatial information on a plane.
+ * (! ONLY FOR VISUALISATION)
+ *
+ * @param indexTimeSample The current time step index.
+ * @param dim The dimension perpendicular to the slice (0: yz-plane, 1:
+ * xz-plane, 2: xy-plane).
+ * @param compression_file Stream for saving compression metadata if enabled.
+ * @return The size of the generated file in bytes.
+ */
 int SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim,
                                       std::ofstream& compression_file)
 {
@@ -456,6 +492,16 @@ int SEMproxy::generate_snapshot_slice(int indexTimeSample, int dim,
   return std::filesystem::file_size(filename.str());
 }
 
+/**
+ * @brief Exports a 2D slice of the pressure field as a PPM image (heatmap).
+ *
+ * This function generates a visualization of the pressure field on a 2D plane
+ * directly in-situ.
+ *
+ * @param indexTimeSample The current time step index.
+ * @param dim The dimension perpendicular to the slice (0: yz-plane, 1:
+ * xz-plane, 2: xy-plane).
+ */
 void SEMproxy::export_ppm_slice(int indexTimeSample, int dim)
 {
   std::stringstream filename;

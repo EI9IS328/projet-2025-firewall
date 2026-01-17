@@ -85,7 +85,12 @@ Both SEM and FD applications are compiled.
 - `--in-situ-interval [interval]`
 
 
+### How to reproduce our experiments ?
 
+After `cd benchmark/`, you can use one of our basic runners to run the programm with complete workflow.
+For experiment, they use the runners in `runners/` folder that contains all more complex runners used
+to generate plots from report. Plots are generated thank's to `version_cmp.R` which is the global plot
+file for experiement (that's why if you launch one runner all generate plots doesn't seems to explain something)
 
 ---
 
