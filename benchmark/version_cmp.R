@@ -7,6 +7,7 @@ if (length(args) == 0) {
 input_file <- args[1]
 
 df <- read.table(input_file, header = T, sep = ",")
+df$Compression <- as.factor(df$Compression)
 
 ggplot(df, aes(x = Ex, y = Total.Time)) +
   geom_line(color = "#161B33") +
@@ -96,8 +97,9 @@ df$Experiment[df$In.situ == "true"] <- "In-situ"
 
 df$Experiment <- factor(df$Experiment, levels = c("Reference", "In-situ", "Snapshots", "Slices"))
 
-ggplot(df, aes(x = Ex, y = Total.Time, color = Experiment)) +
-  geom_line(aes(group = Experiment)) +
+
+ggplot(df, aes(x = Ex, y = Total.Time, color = Experiment, linetype = Compression)) +
+  geom_line(aes(group = interaction(Experiment, Compression))) +
   geom_point(size = 2) +
   scale_color_manual(values = c(
     "Reference" = "black",
@@ -112,15 +114,15 @@ ggplot(df, aes(x = Ex, y = Total.Time, color = Experiment)) +
     legend.background = element_rect(fill = "white", color = NA),
     plot.title = element_text(face = "bold"),
   ) +
-  guides(color = guide_legend(title = "Experiment Type")) +
+  guides(color = guide_legend(title = "Experiment Type"), linetype = guide_legend(title = "Compression")) +
   xlab("Side size (ex=ey=ez)") +
   ylab("Total Time (s)")
 
 ggsave(paste(input_file, "_experiment.png", sep = ""), width = 8, height = 6)
 
 
-ggplot(df, aes(x = Ex, y = Mean.Snapshot.Size, color = Experiment)) +
-  geom_line(aes(group = Experiment)) +
+ggplot(df, aes(x = Ex, y = Mean.Snapshot.Size, color = Experiment, linetype = Compression)) +
+  geom_line(aes(group = interaction(Experiment, Compression))) +
   geom_point(size = 2) +
   scale_color_manual(values = c(
     "Reference" = "black",
@@ -135,7 +137,7 @@ ggplot(df, aes(x = Ex, y = Mean.Snapshot.Size, color = Experiment)) +
     legend.background = element_rect(fill = "white", color = NA),
     plot.title = element_text(face = "bold"),
   ) +
-  guides(color = guide_legend(title = "Experiment Type")) +
+  guides(color = guide_legend(title = "Experiment Type"), linetype = guide_legend(title = "Compression")) +
   xlab("Side size (ex=ey=ez)") +
   ylab("Snapshot size (Mo)")
 
