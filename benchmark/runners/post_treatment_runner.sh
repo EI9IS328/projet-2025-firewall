@@ -24,7 +24,7 @@ cmake ..
 make
 cd ../benchmark
 for pb_size in $PROBLEM_SIZE; do
-    echo "creating fodler for size ${pb_size}"
+    echo "creating folder for size ${pb_size}"
     mkdir -p "${FOLDER}_output_size${pb_size}"
 done
 mkdir -p "${FOLDER}"

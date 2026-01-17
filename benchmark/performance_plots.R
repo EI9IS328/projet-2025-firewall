@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-
+# Generated with Gemini3
 # Check for ggplot2 and install if missing
 if (!require("ggplot2", quietly = TRUE)) {
   install.packages("ggplot2", repos='http://cran.us.r-project.org')
@@ -26,9 +26,8 @@ p <- ggplot(df, aes(x = problem_size, y = execution_time_seconds)) +
   geom_line(color = "#2c3e50", size = 1) +
   geom_point(color = "#e74c3c", size = 3) +
   labs(
-    title = "Post-treatment time depending ont the size of the problem",
-    subtitle = paste("Source:", csv_path),
-    x = "Problem Size (N)",
+    title = "Post-treatment time depending on the size of the problem",
+    x = "Side Size (ex=ey=ez)",
     y = "Post-treatment Time (seconds)"
   ) +
   theme(
