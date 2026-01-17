@@ -83,7 +83,7 @@ et caractériser les applications in-situ.
 %dans un processus séparé sur les mêmes nœuds (in-transit local), ou sur des nœuds dédiés (in-transit
 %distant) ? Justifiez votre choix d'architecture
 Notre traitement in-situ est directement intégré au le code de simulation. Nous aurions pu déléguer la tâche du traitement 
-in-situ à un processus séparé, voire même à des nœuds dédiés, mais nous avons préféré rester sur l'intégration direct, en in-line.
+in-situ à un processus séparé, voire à des nœuds dédiés, mais nous avons préféré rester sur l'intégration directe, en in-line.
 Cette technique semblant plus  simple à mettre en place et à débugger que les autres, nous avons décidé de nous concentrer sur l'in-line.
 
 \subsection{Accès aux ressources (Resource Access)}
@@ -114,7 +114,7 @@ s'exécute.
 %statistiques ? Comment ce choix affecte-t-il la flexibilité de l'analyse ultérieure ?
 D'après nos analyses ad-hoc, les données présentes dans les snapshots étaient plus pertinentes et nombreuses. Nous avons donc décidé de nous focaliser sur ces données afin de les 
 analyser. Nous avons donc produit diverses statistiques, (pression minimale, moyenne, médiane et écart-type), mais aussi un histogramme de la répartition
-de la pression. Nous donnons tout de même les pressions enregistrées aux récepteurs des simsos mais nous ne faisons pas de traitement particulier.
+de la pression. Nous donnons tout de même les pressions enregistrées aux récepteurs des sismogrammes, mais nous ne faisons pas de traitement particulier.
 Ces données se trouvent dans le format texte, un fichier étant créé toutes les k itérations.
 Nous avons également des sauvegardes de slices de la simulation en format ppm. Nous parcourons donc nos données lors du traitement, 
 définissons une palette de couleur et écrivons un fichier correspondant aux slices.
@@ -125,7 +125,7 @@ contrairement aux données textuelles qui seraient plutôt destinées aux métie
 \subsection{Fréquence de sortie (Output Frequency)}
 %À quelle fréquence produisez-vous des sorties ? Comment ce paramètre impacte-t-il le compromis entre
 %fidélité temporelle et coût I/O ?
-Nous pouvons gérer presque toutes nos fréquences de sortie, que ce soit les snaphots, les slices ou les analyses in-situ.
+Nous pouvons gérer presque toutes nos fréquences de sortie, que ce soit les snapshots, les slices ou les analyses in-situ.
 Par défaut, nous avons décidé de sauvegarder les données toutes les 50 itérations. C'est évidemment un paramètre à adapter selon
 la taille de la simulation et le besoin en visualisation.
 Les pressions aux sismogrammes sont sauvegardées toutes les itérations, mais ce n'est pas trop coûteux car tout est déjà sauvegardé et une seule ligne est écrite à chaque fois.
@@ -140,17 +140,28 @@ de sauvegarde est vraiment à adapter au cas par cas, selon les temps de simulat
 \subsection{Snaphots}
 \subsubsection{Snapshots globales}\ref{snapshots}
 L'implémentation des snapshots complète repose sur le parcours de du tableau `pnGlobal' afin de sauvegarder la pression à chaque point
-donné du maillage. Nous avons choisi de stocker ces informations sous forme de texte avec des fichier de la forme de CSV. Cela facilite
-leur lecture que ce soit par nous, développeurs, pour identifier si les valeurs semblent "choérente" lors du développement, mais également
+donné du maillage. Nous avons choisi de stocker ces informations sous forme de texte avec des fichiers de la forme de CSV. Cela facilite
+leur lecture que ce soit par nous, développeurs, pour identifier si les valeurs semblent "cohérente" lors du développement, mais également
 par les autres corps de métiers qui pourraient avoir besoin de les parcourir (et qui n'ont pas forcément les compétences en informatique pour transformer
 un binaire en texte). De plus, cela permet de faciliter le changement de système de visualisation. Ici, puisque toutes nos visualisations \textit{ad-hoc} sont faites
-en \textit{R}, la lecture d'un fichier type CSV se fait facilement et de mainère directe. Si l'on voulait ajouter des visualisations avec un autre logiciel,
-il serait simple de lire les données sur celui-ci puisque les fichiers CSV sont massivement supportés. Cepedant, ce choix d'implémentation aura un impact direct
-sur la taille et le temps nécessaire à écrire les snapshots. Comme le but du projet est de produire et comparer avec un workflow in-situ, les snapshots serviront à 
+en \textit{R}, la lecture d'un fichier type CSV se fait facilement et de manière directe. Si l'on voulait ajouter des visualisations avec un autre logiciel,
+il serait simple de lire les données sur celui-ci puisque les fichiers CSV sont massivement supportés. Cependant, ce choix d'implémentation aura un impact direct
+sur la taille et le temps nécessaire à écrire les snapshots. 
+\FloatBarrier
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{output_snapshot_enabled.png}
+    \caption{Comparaison de la durée d'un run avec ou sans snaphots}
+    \label{fig:snap_enabled}
+\end{figure}
+La figure \ref{fig:snap_enabled} montre donc la différence entre un run avec et sans snapshots. On peut voir que l'impact est énorme,
+ici, on ne parle même pas du temps total de l'application avec la visualisation mais seulement de la simulation et de l'écriture des snapshhots. Pour la plus grande taille, écrire des snapshots
+toutes les 50 itérations multiplie au moins par 20 la durée d'exécution de la simulation.
+ Comme le but du projet est de produire et comparer avec un workflow in-situ, les snapshots serviront à 
 terme uniquement pour la sauvegarde d'état de la simulation. L'impact de ce choix sera donc moindre puisque les visualisations passeront par d'autres systèmes.
 
-C'est pour cela que nous avons ajouté l'option \textit{--save-interval [interval]} permettant de sauvergader les snapshots toutes les \textit{interval} itérations.
-Pour la visualisation nous préférerons utiliser les méthodes des parties \ref{part:snapshotsSlices} et \ref{part:slicePPM}.
+C'est pour cela que nous avons ajouté l'option \textit{--save-interval [interval]} permettant de sauvegarder les snapshots toutes les \textit{interval} itérations.
+Pour la visualisation, nous préférerons utiliser les méthodes des parties \ref{part:snapshotsSlices} et \ref{part:slicePPM}.
 
 Il est donc possible de générer des visualisations à partir de ces snapshots avec le fichier \textit{pressure\_map.R}. Celui-ci génère trois heatmaps différentes correspondant
 au différents plans du maillage. On retrouve un exemple de visualisation en Figure \ref{}. Sur ce type de visualisation, on retrouve également les statistiques descriptives présentées
@@ -160,9 +171,9 @@ en section \ref{}
 \todo[inline]{AJOUTER REF VERS SECTION STAT DESC}
 \subsubsection{Snapshots slices}\label{part:snapshotsSlices}
 Afin de limiter l'impact des snapshots, nous avons mis en place un système de \textit{slice}. L'objectif est ici de créer des snapshots spécifiques à la visualisation
-afin de diminuer les coûts pour générer nos heatmaps. Pour ce faire nous avons ajouter une fonction \textit{generate\_snapshot\_slice} visible dans le Listing \ref{lst:slices}.
+afin de diminuer les coûts pour générer nos heatmaps. Pour ce faire nous avons ajouté une fonction \textit{generate\_snapshot\_slice} visible dans le Listing \ref{lst:slices}.
 Nous avons ajouté un paramètre \textit{dim} permettant de choisir sur quelle dimension doit être effectuée la coupe. Il est possible de faire des XY, XZ et YZ. La coupe se fait alors sur le milieu du maillage sur le plan
-demandé. Nous n'avons pas ajouté de paramètre permettant de choisir l'indice auquel la coupe doit être effectuée mais il serait simple et rapide de l'ajouter. Pour faire fonctionner
+demandé. Nous n'avons pas ajouté de paramètre permettant de choisir l'indice auquel la coupe doit être effectuée, mais il serait simple et rapide de l'ajouter. Pour faire fonctionner
 nos visualisations avec les slices, nous avons modifié notre fichier \textit{pressure\_map.R} pour qu'il prenne en compte qu'il n'y avait plus que deux dimensions. Les images obtenues
 sont similaires à celles générées avec une snapshot complète.
 
@@ -183,7 +194,7 @@ de choisir un fichier contentant les récepteurs à monitorer et le dossier de s
 Nous avons fixé le format du fichier dès le départ afin de pouvoir se répartir le travail et pouvoir produire des visualisations à partir de données
 d'exemple avant d'avoir terminé l'implémentation des sismogrammes.
 Lorsque l'on active l'option sismos, nous obtenons donc un fichier contenant sur chaque ligne le temps et la mesure de pression sur chaque récepteur.
-C'est un fichier contenant un header contenant le timestep et  les coordonnées des récepeteus. Les coordonnées des récepteurs sont sous la forme \textit{coordX,coordY,coordZ} 
+C'est un fichier contenant un header contenant le timestep et  les coordonnées des récepteus. Les coordonnées des récepteurs sont sous la forme \textit{coordX,coordY,coordZ} 
 et chaque élément est séparé par un espace. Comme pour les snapshots, nous avons fait le choix de sauvegarder les sismogrammes dans un fichier texte afin de pouvoir lire facilement les données.
 
 Ce fichier peut ensuite être utilisé à des fins de visualisation, pour produire des courbes représentant la variabilité des pressions aux récepteurs données au cours du temps.
@@ -191,7 +202,7 @@ Ce fichier peut ensuite être utilisé à des fins de visualisation, pour produi
 \subsection{Analyses et Visualisations}
 Afin d'analyser et visualiser nos différentes sorties, nous avons créé plusieurs scripts.
 Tout d'abord, nous avons un formatteur en Python qui parse la sortie du programme afin de sortir les informations nécessaires à la suite de l'analyse comme le temps de calcul, la fréquence des snapshots,...
-Nous avons ensuite des scripts R permettant de produire différentes statistiques et visualisations concernant les sismogrammes et snaphots.
+Nous avons ensuite des scripts R permettant de produire différentes statistiques et visualisations concernant les sismogrammes et snapshots.
 
 Le script \textit{pressure\_map.R} permet d'analyser les snaphots et \textit{pressure\_map\_slice.R} analyse les slices de snapshot. Ces scripts nous permettent de visualiser
 
@@ -227,19 +238,19 @@ afin de parcourir les données et écrire dans un fichier les informations impor
 un histogramme de la distribution de la pression sur le maillage. Nous enregistrons aussi la pression aux récepteurs, mais n'effectuons pas de traitements sur les données des sismogrammes.
 Cette partie est sauvegardée sous la forme de fichier texte afin de simplifier le code. D'autres techniques sont possibles comme l'utilisation d'Adios2
 mais nous avons choisi la simplicité de lecture de nos fichiers.
-Un fichier est créé pour chaque sauvegarde de traitement, nous avons donc autant de fichiers que de fichiers de snapshots si nous emttons la même fréquence. En revanche, le poids des fichiers de traitement in-situ est
+Un fichier est créé pour chaque sauvegarde de traitement, nous avons donc autant de fichiers que de fichiers de snapshots si nous mettons la même fréquence. En revanche, le poids des fichiers de traitement in-situ est
 assez négligeable, nous avons des fichiers de quelques lignes contre des milliers pour les snapshots.
 Nous avons également des sauvegardes de heatmaps de pression sur des slices, que nous détaillons partie \ref{part:slicePPM}.
 
 \subsection{Slice PPM}\label{part:slicePPM}
-Pour éviter de sauvegarder des slices dans le seul but de les visualiser par la suite, nous avons ajouter la fonction \textit{export\_ppm\_slice}. Celle-ci
-nous evite de devoir repasser sur les slices en \textit{ad-hoc} et donc de devoir re-charger un fichier pour seulement générer une visualisation. Le type de de visualisation
+Pour éviter de sauvegarder des slices dans le seul but de les visualiser par la suite, nous avons ajouté la fonction \textit{export\_ppm\_slice}. Celle-ci
+nous évite de devoir repasser sur les slices en \textit{ad-hoc} et donc de devoir re-charger un fichier pour seulement générer une visualisation. Le type de  visualisation
 que l'on génère en comparaison avec ce que l'on produit avec les slices peut être observé dans la Figure \ref{} \todo{add ref}. On observe que la seule différence est ici
 le fait que l'échelle des pressions est absente. Tout comme pour les slices de snapshots, on peut choisir sur quelle dimension on souhaite réaliser la coupe.
 
-Si l'on compare cette nouvelle fonction avec la précédente, on peut voir que l'on doit parcourir le maillage deux fois. En effet, pour obetnir une échelle de la pression
-et donc pouvoir ajouter la bonne couleur à chaque pixel, nous devons d'abord trouver les valeurs minimum et maximum pour générer la pallette de couleurs. On doit également stocker
-une deuxième fois les points du maillages pour notre représentation en pixel, ce qui peut avoir un coût en mémoire supplémentaire non négligeable si l'on travail sur des grands domaines.
+Si l'on compare cette nouvelle fonction avec la précédente, on peut voir que l'on doit parcourir le maillage deux fois. En effet, pour obtenir une échelle de la pression
+et donc pouvoir ajouter la bonne couleur à chaque pixel, nous devons d'abord trouver les valeurs minimum et maximum pour générer la palette de couleurs. On doit également stocker
+une deuxième fois les points du maillage pour notre représentation en pixel, ce qui peut avoir un coût en mémoire supplémentaire non négligeable si l'on travaille sur des grands domaines.
 
 \section{Compression des données}
 
@@ -257,31 +268,31 @@ l'utilisation de ces types plus compliquée et nous nous sommes contentés de di
 \section{Comparaison ad-hoc vs in-situ}
 Pour toutes les experiences que nous avons fait, nous utilisons la partition \textit{/tmp} pour stocker les snapshots, visualisations et tous les autres
 fichiers générés. Il faudra donc veiller à déplacer les fichiers générés vers un autre répertoire si vous souhaitez pouvoir les conserver. Nous avons utilisé
-ce dossier par défaut pour éviter des temps d'écriture plus long du au système de fichiers du cremi.
+ce dossier par défaut pour éviter des temps d'écriture plus long dû au système de fichiers du CREMO.
 \subsection{Comparaison en temps}
-Le premier point que nous souhaitions comparé entre toutes nos version était le temps mis pour différentes tailles données. Afin de pouvoir
-réaliser un grand nombre d'experience nous nous sommes réstreint à des taille de maillage ne dépassant pas les 150x150x150. De plus, pour toutes les 
+Le premier point que nous souhaitions comparer entre toutes nos versions était le temps mis pour différentes tailles données. Afin de pouvoir
+réaliser un grand nombre d'expériences, nous nous sommes restreint à des tailles de maillage ne dépassant pas les 150x150x150. De plus, pour toutes les 
 runs que nous avons fait, nous utilisons toujours des domaines cubiques ($ex=ey=ez$). 
 \subsection{Comparaison en espace}
 Ensuite, nous avons voulu étudier l'effet sur le stockage de nos différentes versions. Nous n'avons pas effectué de mesures pour les \textit{slices PPM} car nous ne 
-comptons pas les visualisations finales dans les tailles de fichiers. Par exemple, pour le snapshots, nous gardons la taille du fichier généré à chaque sauvegarde
+comptons pas les visualisations finales dans les tailles de fichiers. Par exemple, pour le snapshots, nous gardons la taille du fichier généré à chaque sauvegarde,
 mais nous ne comptons pas le fichier \textit{.png} généré en \textit{ad-hoc}. Il en est de même pour les slices ou seules les fichiers de slice sont compté dans les Figures
 suivantes (on ne compte pas les \textit{.png}).
 \section{Discussions sur la scalabilité}
-D'après les experiences que nous avons fait, on remarque que certaines versions ne pourraient pas passer à l'échelle. Il suffit de prendre la version utilisant
+D'après les expériences que nous avons faites, on remarque que certaines versions ne pourraient pas passer à l'échelle. Il suffit de prendre la version utilisant
 les snapshots complets pour faire de la visualisation pour voir que l'on ne pourra pas travailler avec de grands domaines. En effet, la taille des snapshots grandit
 très vite et l'on se retrouve avec des snapshots d'environ 1Go pour une taille de problème de seulement 150x150x150. De plus, avec cette version le temps d'exécution
-du workflow ad-hoc augmente de manière significative même avec des petites tailles. Il est donc impossible d'uitliser cette version pour des problème de grande taille,
+du workflow ad-hoc augmente de manière significative même avec des petites tailles. Il est donc impossible d'utiliser cette version pour des problèmes de grande taille,
 même avec beaucoup de ressources (elles ne seraient pas assez exploitée). 
-Si l'on souhaite pouvoir re-effectuer des visualisations, l'export sous forme de slice (compréssée ou non) semble être une bonne alternative. Elle ne force pas à
-utiliser le format PPM, mais il faudra tout de même penser au fait que les slices peuvent atteindre de tailles importante si la taille du problème est grande.
+Si l'on souhaite pouvoir re-effectuer des visualisations, l'export sous forme de slice (compressées ou non) semble être une bonne alternative. Elle ne force pas à
+utiliser le format PPM, mais il faudra tout de même penser au fait que les slices peuvent atteindre de tailles importantes si la taille du problème est grande.
 
-Enfin, la version in-situ semble être la plus scalable. En effet, cette version solicite beaucoup moins les I/O que les autres. Quand on sait que les applications
-HPC sont souvent memory bound, il semble plus interressant de limiter le nombre d'I/O lorsque cela n'est pas nécessaire. Nous pensons que la version optimale devrait donc mixer
+Enfin, la version in-situ semble être la plus scalable. En effet, cette version sollicite beaucoup moins les I/O que les autres. Quand on sait que les applications
+HPC sont souvent memory bound, il semble plus intéressant de limiter le nombre d'I/O lorsque cela n'est pas nécessaire. Nous pensons que la version optimale devrait donc mixer
 la version avec les snapshots, qui serait ici utilisée afin de faire du checkpoiting permettant de pouvoir reprendre la simulation à un point donné. Ces snapshots ne seraient donc 
-pas générés à chaque itérations mais plutôt toutes les $K$ itérations afin de ne pas trop impacter les performances de l'application. Pour la visualisation, le workflow in-situ
+pas générés à chaque itération, mais plutôt toutes les $K$ itérations afin de ne pas trop impacter les performances de l'application. Pour la visualisation, le workflow in-situ
 semble idéal pour rendre le programme performant pour la génération des heatmaps. Cependant, l'impact étant limité sur les sismogrammes et les visualisations de celui-ci bien plus explicite
-en ad-hoc, on pourrait continuer de les sauvergader de la même manière que dans le premier workflow. 
+en ad-hoc, on pourrait continuer de les sauvegarder de la même manière que dans le premier workflow. 
 
 
 \section{Conclusion}
