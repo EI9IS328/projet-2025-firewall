@@ -85,3 +85,33 @@ ggplot(df, aes(x = Nodes, y = Total.Time, color = Snapshot.Slices)) +
   ylab("Total Time (s)")
 
 ggsave(paste(input_file, "_snapshot_slices.png", sep = ""), width = 8, height = 6)
+
+df$Experiment <- "Reference"
+
+df$Experiment[df$Snapshot.Enabled == "true" & df$Snapshot.Slices == "false"] <- "Snapshots"
+
+df$Experiment[df$Snapshot.Slices == "true"] <- "Slices"
+
+df$Experiment[df$In.situ == "true"] <- "In-situ"
+
+df$Experiment <- factor(df$Experiment, levels = c("Reference", "In-situ", "Snapshots", "Slices"))
+
+ggplot(df, aes(x = Nodes, y = Total.Time, color = Experiment)) +
+  geom_line(aes(group = Experiment)) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("Reference" = "black", 
+                                "In-situ" = "#E69F00", 
+                                "Snapshots" = "#56B4E9", 
+                                "Slices" = "#009E73")) +
+  scale_y_log10() +
+  theme(
+    legend.position = c(0.05, 0.95),
+    legend.justification = c("left", "top"),
+    legend.background = element_rect(fill = "white", color = NA),
+    plot.title = element_text(face = "bold"),
+  ) +
+  guides(color = guide_legend(title = "Experiment Type")) +
+  xlab("Nodes") +
+  ylab("Total Time (s)")
+
+ggsave(paste(input_file, "_experiment.png", sep = ""), width = 8, height = 6)
