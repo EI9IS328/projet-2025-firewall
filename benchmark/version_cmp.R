@@ -137,6 +137,6 @@ ggplot(df, aes(x = Ex, y = Mean.Snapshot.Size, color = Experiment)) +
   ) +
   guides(color = guide_legend(title = "Experiment Type")) +
   xlab("Side size (ex=ey=ez)") +
-  ylab("Total Time (s)")
+  ylab("Snapshot size (Mo)")
 
 ggsave(paste(input_file, "_experiment_size.png", sep = ""), width = 8, height = 6)
