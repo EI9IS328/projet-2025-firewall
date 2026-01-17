@@ -135,7 +135,7 @@ en section \ref{}
 
 \todo[inline]{AJOUTER UN EXEMPLE DE FIGURE}
 \todo[inline]{AJOUTER REF VERS SECTION STAT DESC}
-\subsubsection{Snapshots slice}\label{part:snapshotsSlices}
+\subsubsection{Snapshots slices}\label{part:snapshotsSlices}
 Afin de limiter l'impact des snapshots, nous avons mis en place un système de \textit{slice}. L'objectif est ici de créer des snapshots spécifiques à la visualisation
 afin de diminuer les coûts pour générer nos heatmaps. Pour ce faire nous avons ajouter une fonction \textit{generate\_snapshot\_slice} visible dans le Listing \ref{lst:slices}.
 Nous avons ajouté un paramètre \textit{dim} permettant de choisir sur quelle dimension doit être effectuée la coupe. Il est possible de faire des XY, XZ et YZ. La coupe se fait alors sur le milieu du maillage sur le plan
@@ -174,6 +174,14 @@ Nous avons toutefois réduits le nombre d'analyses des sismogrammes, il y a peu 
 seraient plus pertinent pour les utilisateurs métier.
 
 \subsection{Slice PPM}\label{part:slicePPM}
+Pour éviter de sauvegarder des slices dans le seul but de les visualiser par la suite, nous avons ajouter la fonction \textit{export\_ppm\_slice}. Celle-ci
+nous evite de devoir repasser sur les slices en \textit{ad-hoc} et donc de devoir re-charger un fichier pour seulement générer une visualisation. Le type de de visualisation
+que l'on génère en comparaison avec ce que l'on produit avec les slices peut être observé dans la Figure \ref{} \todo{add ref}. On observe que la seule différence est ici
+le fait que l'échelle des pressions est absente. Tout comme pour les slices de snapshots, on peut choisir sur quelle dimension on souhaite réaliser la coupe.
+
+Si l'on compare cette nouvelle fonction avec la précédente, on peut voir que l'on doit parcourir le maillage deux fois. En effet, pour obetnir une échelle de la pression
+et donc pouvoir ajouter la bonne couleur à chaque pixel, nous devons d'abord trouver les valeurs minimum et maximum pour générer la pallette de couleurs. On doit également stocker
+une deuxième fois les points du maillages pour notre représentation en pixel, ce qui peut avoir un coût en mémoire supplémentaire non négligeable si l'on travail sur des grands domaines.
 
 \section{Compression des données}
 
@@ -189,8 +197,22 @@ si la compression faisait vraiment gagner de la place sans trop perdre en préci
 l'utilisation de ces types plus compliquée et nous nous sommes contentés de diviser par 2 la taille des nombres stockés.
 
 \section{Comparaison ad-hoc vs in-situ}
-
+Pour toutes les experiences que nous avons fait, nous utilisons la partition \textit{/tmp} pour stocker les snapshots, visualisations et tous les autres
+fichiers générés. Il faudra donc veiller à déplacer les fichiers générés vers un autre répertoire si vous souhaitez pouvoir les conserver. Nous avons utilisé
+ce dossier par défaut pour éviter des temps d'écriture plus long du au système de fichiers du cremi.
+\subsection{Comparaison en temps}
+Le premier point que nous souhaitions comparé entre toutes nos version était le temps mis pour différentes tailles données. Afin de pouvoir
+réaliser un grand nombre d'experience nous nous sommes réstreint à des taille de maillage ne dépassant pas les 150x150x150. De plus, pour toutes les 
+runs que nous avons fait, nous utilisons toujours des domaines cubiques ($ex=ey=ez$). 
+\subsection{Comparaison en espace}
+Ensuite, nous avons voulu étudier l'effet sur le stockage de nos différentes versions. Nous n'avons pas effectué de mesures pour les \textit{slices PPM} car nous ne 
+comptons pas les visualisations finales dans les tailles de fichiers. Par exemple, pour le snapshots, nous gardons la taille du fichier généré à chaque sauvegarde
+mais nous ne comptons pas le fichier \textit{.png} généré en \textit{ad-hoc}. Il en est de même pour les slices ou seules les fichiers de slice sont compté dans les Figures
+suivantes (on ne compte pas les \textit{.png}).
 \section{Discussions sur la scalabilité}
+D'après les experiences que nous avons fait, on remarque que certaines versions ne pourraient pas passer à l'échelle. Il suffit de prendre la version utilisant
+les snapshots complets pour faire de la visualisation pour voir que 
+
 
 \section{Conclusion}
 
